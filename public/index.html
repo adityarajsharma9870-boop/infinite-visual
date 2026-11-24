@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
     rel="stylesheet">
   <!-- Fully Precompiled Offline & Smart-TV Production Stylesheet (Zero CDN lag, zero runtime errors) -->
-  <link rel="stylesheet" href="/css/compiled.css?v=58">
+  <link rel="stylesheet" href="/css/compiled.css?v=59">
   <!-- Custom Video Player Engines: Hls.js & ArtPlayer -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js"></script>
@@ -557,11 +557,11 @@
         <!-- Player Engine Switcher Pill -->
         <select id="playerEngineSelect" onchange="changePlayerEngine(this.value)"
           class="bg-neutral-900 border border-neutral-700 text-neutral-300 text-[11px] font-semibold rounded-lg px-2 py-1 focus:outline-none cursor-pointer">
-          <option value="custom" selected>⚡ Direct High-Speed (No Ads)</option>
-          <option value="autoembed">🚀 AutoEmbed Server (TV Safe)</option>
-          <option value="vidlink">🔥 VidLink Server (Multi-Audio)</option>
-          <option value="vidbolt">🎬 VidBolt Server</option>
-          <option value="vidsrc">🌐 VidSrc Server</option>
+          <option value="vidlink" selected>⚡ VidLink Stream (Fast &amp; Multi-Audio)</option>
+          <option value="custom">🎬 Direct HLS Player</option>
+          <option value="vidbolt">🚀 VidBolt Server</option>
+          <option value="autoembed">🌐 AutoEmbed Server</option>
+          <option value="vidsrc">📡 VidSrc Server</option>
         </select>
         <!-- Fullscreen Button -->
         <button onclick="togglePlayerFullscreen()"
@@ -801,7 +801,7 @@
     <span id="toastMsg">Notification message</span>
   </div>
 
-  <script src="/js/app.js?v=58"></script>
+  <script src="/js/app.js?v=59"></script>
 </body>
 
 </html>
