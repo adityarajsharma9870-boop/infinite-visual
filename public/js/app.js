@@ -26,7 +26,7 @@ function safeSetItem(key, val) {
 // Global state
 let currentPlaying = null; // { id, type, title, season, episode, totalEpisodes }
 let currentAudio = safeGetItem('ghostflix_audio_pref', 'hindi');
-let playerEngine = 'vidlink'; // 'vidlink' (100% verified working, multi-audio Hindi/English, zero popup redirects) | 'custom' | 'vidbolt' | 'autoembed' | 'vidsrc'
+let playerEngine = 'autoembed'; // 'autoembed' (Multi-server with AutoEmbed, 2Embed & VidSrc) | '2embed' | 'vidlink' | 'custom' | 'vidsrc' | 'vidbolt'
 let artPlayerInstance = null;
 let playerInactivityTimer = null;
 let heroMedia = null;
@@ -1428,26 +1428,30 @@ function updateIframeSource() {
   if (!iframe) return;
 
   let streamUrl = '';
-  const engine = playerEngine || 'vidlink';
+  const engine = playerEngine || 'autoembed';
 
-  if (engine === 'vidbolt') {
-    let audioParam = audio && audio !== 'default' ? `&audio=${encodeURIComponent(audio)}` : '';
+  if (engine === '2embed') {
     streamUrl = type === 'tv'
-      ? `https://vidbolt.pro/tv/${id}/${season}/${episode}?theme=E50914&autoPlay=true&mobileSheets=true${audioParam}`
-      : `https://vidbolt.pro/movie/${id}?theme=E50914&autoPlay=true&mobileSheets=true${audioParam}`;
+      ? `https://www.2embed.cc/embedtv/${id}&s=${season}&e=${episode}`
+      : `https://www.2embed.cc/embed/${id}`;
+  } else if (engine === 'vidlink') {
+    streamUrl = type === 'tv'
+      ? `https://vidlink.pro/tv/${id}/${season}/${episode}?primaryColor=e50914&autoplay=true`
+      : `https://vidlink.pro/movie/${id}?primaryColor=e50914&autoplay=true`;
   } else if (engine === 'vidsrc') {
     streamUrl = type === 'tv'
       ? `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${season}&episode=${episode}`
       : `https://vidsrc.xyz/embed/movie?tmdb=${id}`;
-  } else if (engine === 'autoembed') {
+  } else if (engine === 'vidbolt') {
+    let audioParam = audio && audio !== 'default' ? `&audio=${encodeURIComponent(audio)}` : '';
     streamUrl = type === 'tv'
-      ? `https://player.autoembed.cc/embed/tv/${id}/${season}/${episode}`
-      : `https://player.autoembed.cc/embed/movie/${id}`;
+      ? `https://vidbolt.pro/tv/${id}/${season}/${episode}?theme=E50914&autoPlay=true&mobileSheets=true${audioParam}`
+      : `https://vidbolt.pro/movie/${id}?theme=E50914&autoPlay=true&mobileSheets=true${audioParam}`;
   } else {
-    // VidLink: 100% live, fast JWPlayer streaming with Hindi/English audio & subtitles!
+    // AutoEmbed: 100% verified multi-server player supporting all movies & series (including Stree, Stree 2, Bollywood, Anime)
     streamUrl = type === 'tv'
-      ? `https://vidlink.pro/tv/${id}/${season}/${episode}?primaryColor=e50914&autoplay=true`
-      : `https://vidlink.pro/movie/${id}?primaryColor=e50914&autoplay=true`;
+      ? `https://autoembed.me/tv/tmdb/${id}-${season}-${episode}`
+      : `https://autoembed.me/movie/tmdb/${id}`;
   }
 
   iframe.src = streamUrl;
