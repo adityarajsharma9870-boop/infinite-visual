@@ -929,36 +929,88 @@ function clearSearch() {
 
 function closeSearch() {
   const mobWrap = document.getElementById('mobileSearchWrap');
-  if (mobWrap) mobWrap.classList.add('hidden');
+  if (mobWrap) {
+    mobWrap.classList.add('hidden');
+    mobWrap.style.display = 'none';
+  }
   const heroBtn = document.getElementById('heroSearchBtn');
-  if (heroBtn) heroBtn.classList.remove('hidden');
-  document.getElementById('searchResultsSection').classList.add('hidden');
-  document.getElementById('mainContent').classList.remove('hidden');
-  document.getElementById('myListSection').classList.add('hidden');
+  if (heroBtn) {
+    heroBtn.classList.remove('hidden');
+    heroBtn.style.display = '';
+  }
+  const searchSec = document.getElementById('searchResultsSection');
+  if (searchSec) {
+    searchSec.classList.add('hidden');
+    searchSec.style.display = 'none';
+  }
+  const mainCont = document.getElementById('mainContent');
+  if (mainCont) {
+    mainCont.classList.remove('hidden');
+    mainCont.style.display = 'block';
+  }
+  const myListSec = document.getElementById('myListSection');
+  if (myListSec) {
+    myListSec.classList.add('hidden');
+    myListSec.style.display = 'none';
+  }
 }
 
 async function performSearch(query) {
-  document.getElementById('searchResultsSection').classList.remove('hidden');
-  document.getElementById('mainContent').classList.add('hidden');
-  document.getElementById('myListSection').classList.add('hidden');
+  const searchSec = document.getElementById('searchResultsSection');
+  searchSec.classList.remove('hidden');
+  searchSec.style.display = 'block';
+
+  const mainCont = document.getElementById('mainContent');
+  mainCont.classList.add('hidden');
+  mainCont.style.display = 'none';
+
+  const myListSec = document.getElementById('myListSection');
+  myListSec.classList.add('hidden');
+  myListSec.style.display = 'none';
+
   document.getElementById('searchQueryLabel').textContent = `Showing results for "${query}"`;
 
   const grid = document.getElementById('searchResultsGrid');
   const empty = document.getElementById('searchEmptyState');
   grid.innerHTML = getSkeletonCards(12, true);
   empty.classList.add('hidden');
+  empty.style.display = 'none';
 
   try {
-    const res = await fetch(`/api/tmdb/search/multi?query=${encodeURIComponent(query)}`);
+    const cleanQuery = query.trim();
+    let res = await fetch(`/api/tmdb/search/multi?query=${encodeURIComponent(cleanQuery)}`);
     if (!res.ok) throw new Error('Search failed');
-    const data = await res.json();
+    let data = await res.json();
     let results = (data.results || []).filter(item => item.media_type === 'movie' || item.media_type === 'tv');
+
+    // Fallback 1: trailing 1 (e.g. stree1 -> stree)
+    if (results.length === 0 && /1$/.test(cleanQuery)) {
+      const q1 = cleanQuery.replace(/1$/, '').trim();
+      const res1 = await fetch(`/api/tmdb/search/multi?query=${encodeURIComponent(q1)}`);
+      if (res1.ok) {
+        const d1 = await res1.json();
+        const r1 = (d1.results || []).filter(item => item.media_type === 'movie' || item.media_type === 'tv');
+        if (r1.length > 0) results = r1;
+      }
+    }
+
+    // Fallback 2: letter+digit without space (e.g. stree2 -> stree 2, kgf2 -> kgf 2)
+    if (results.length === 0 && /([a-zA-Z]+)(\d+)/.test(cleanQuery)) {
+      const q2 = cleanQuery.replace(/([a-zA-Z]+)(\d+)/g, '$1 $2').trim();
+      const res2 = await fetch(`/api/tmdb/search/multi?query=${encodeURIComponent(q2)}`);
+      if (res2.ok) {
+        const d2 = await res2.json();
+        const r2 = (d2.results || []).filter(item => item.media_type === 'movie' || item.media_type === 'tv');
+        if (r2.length > 0) results = r2;
+      }
+    }
 
     window.lastSearchResults = results;
     renderFilteredSearch();
   } catch (e) {
     grid.innerHTML = '';
     empty.classList.remove('hidden');
+    empty.style.display = 'block';
   }
 }
 
@@ -987,8 +1039,10 @@ function renderFilteredSearch() {
   grid.innerHTML = '';
   if (filtered.length === 0) {
     empty.classList.remove('hidden');
+    empty.style.display = 'block';
   } else {
     empty.classList.add('hidden');
+    empty.style.display = 'none';
     filtered.forEach(item => {
       if (item.poster_path) {
         grid.appendChild(createMediaCard(item, true));
@@ -1035,6 +1089,8 @@ function playMedia(item, season = 1, episode = 1) {
 
   const modal = document.getElementById('playerModal');
   modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+  modal.style.zIndex = '9999';
   document.body.classList.add('overflow-hidden');
 
   document.getElementById('playerMediaTitle').textContent = title;
@@ -1135,8 +1191,13 @@ async function loadCustomPlayer(id, type, season, episode, savedTime = 0) {
   const container = document.getElementById('artplayerContainer');
   const iframe = document.getElementById('videoIframe');
   iframe.classList.add('hidden');
+  iframe.style.display = 'none';
+  iframe.style.zIndex = '0';
   iframe.src = '';
+
   container.classList.remove('hidden');
+  container.style.display = 'block';
+  container.style.zIndex = '20';
 
   if (artPlayerInstance) {
     try { artPlayerInstance.destroy(false); } catch (e) { }
@@ -1403,9 +1464,18 @@ function loadEmbedPlayer() {
     try { artPlayerInstance.destroy(false); } catch (e) { }
     artPlayerInstance = null;
   }
-  document.getElementById('artplayerContainer').classList.add('hidden');
+  const artContainer = document.getElementById('artplayerContainer');
+  if (artContainer) {
+    artContainer.classList.add('hidden');
+    artContainer.style.display = 'none';
+    artContainer.style.zIndex = '0';
+  }
   const iframe = document.getElementById('videoIframe');
-  iframe.classList.remove('hidden');
+  if (iframe) {
+    iframe.classList.remove('hidden');
+    iframe.style.display = 'block';
+    iframe.style.zIndex = '20';
+  }
   const engineSel = document.getElementById('playerEngineSelect');
   if (engineSel) engineSel.value = 'embed';
   updateIframeSource();
@@ -1756,6 +1826,7 @@ function playAdjacentEpisode(direction) {
 function closePlayerModal() {
   const modal = document.getElementById('playerModal');
   modal.classList.add('hidden');
+  modal.style.display = 'none';
   closePlayerSettingsSheet();
   closePlayerAudioSubsSheet();
   closeTrailerModal();
@@ -1846,11 +1917,21 @@ async function openDetailsModal(item) {
   }
 
   modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+  modal.style.zIndex = '9990';
   document.body.classList.add('overflow-hidden');
+  setTimeout(() => {
+    try {
+      const pBtn = document.getElementById('modalPrimaryPlayBtn');
+      if (pBtn) pBtn.focus();
+    } catch (_) { }
+  }, 60);
 }
 
 function closeDetailsModal() {
-  document.getElementById('detailsModal').classList.add('hidden');
+  const modal = document.getElementById('detailsModal');
+  modal.classList.add('hidden');
+  modal.style.display = 'none';
   document.body.classList.remove('overflow-hidden');
 }
 

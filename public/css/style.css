@@ -751,6 +751,12 @@ body.tv-mode * {
   }
 }
 
+/* Critical display overrides for Smart TV compatibility */
+.hidden {
+  display: none !important;
+}
+
+
 
 
 
