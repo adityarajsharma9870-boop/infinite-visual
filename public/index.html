@@ -18,7 +18,7 @@
   <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js"></script>
   <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="/css/style.css?v=35">
+  <link rel="stylesheet" href="/css/style.css?v=51">
 </head>
 
 <body class="bg-black text-white font-sans antialiased overflow-x-hidden">
@@ -29,12 +29,12 @@
     <div class="flex items-center space-x-6 md:space-x-10">
       <!-- Desktop Nav Links -->
       <nav class="flex items-center space-x-6 text-sm font-medium text-gray-300">
-        <a href="#home" class="nav-link active hover:text-white transition" onclick="showHome(event)">Home</a>
-        <a href="#movies" class="nav-link hover:text-white transition"
+        <a href="#home" class="nav-link active hover:text-white transition tv-focusable" tabindex="0" onclick="showHome(event)">Home</a>
+        <a href="#movies" class="nav-link hover:text-white transition tv-focusable" tabindex="0"
           onclick="filterCategory('movie', event)">Movies</a>
-        <a href="#tv" class="nav-link hover:text-white transition" onclick="filterCategory('tv', event)">TV Shows</a>
-        <a href="#anime" class="nav-link hover:text-white transition" onclick="filterCategory('anime', event)">Anime</a>
-        <a href="#mylist" class="nav-link hover:text-white transition" onclick="showMyList(event)">My List <span
+        <a href="#tv" class="nav-link hover:text-white transition tv-focusable" tabindex="0" onclick="filterCategory('tv', event)">TV Shows</a>
+        <a href="#anime" class="nav-link hover:text-white transition tv-focusable" tabindex="0" onclick="filterCategory('anime', event)">Anime</a>
+        <a href="#mylist" class="nav-link hover:text-white transition tv-focusable" tabindex="0" onclick="showMyList(event)">My List <span
             id="myListCount" class="ml-1 text-xs bg-red-600 px-1.5 py-0.5 rounded-full hidden">0</span></a>
       </nav>
     </div>
@@ -44,15 +44,15 @@
       <!-- Search Bar -->
       <div class="relative flex items-center">
         <button id="searchBtn" onclick="toggleSearchInput()"
-          class="text-gray-300 hover:text-white p-2 text-lg focus:outline-none" title="Search">
+          class="text-gray-300 hover:text-white p-2 text-lg focus:outline-none tv-focusable" tabindex="0" title="Search">
           <i class="fa-solid fa-magnifying-glass"></i>
         </button>
         <div id="searchContainer" class="relative hidden sm:block">
           <input type="text" id="searchInput" placeholder="Search Demon Slayer, Marvel, Batman..."
-            class="bg-black/70 border border-neutral-700 text-white placeholder-gray-400 text-sm rounded-full pl-9 pr-8 py-1.5 focus:outline-none focus:border-red-600 focus:bg-black/90 w-44 sm:w-64 md:w-80 transition-all duration-300">
+            class="bg-black/70 border border-neutral-700 text-white placeholder-gray-400 text-sm rounded-full pl-9 pr-8 py-1.5 focus:outline-none focus:border-red-600 focus:bg-black/90 w-44 sm:w-64 md:w-80 transition-all duration-300 tv-focusable" tabindex="0">
           <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
           <button id="clearSearchBtn" onclick="clearSearch()"
-            class="hidden absolute right-3 top-2 text-gray-400 hover:text-white text-xs">
+            class="hidden absolute right-3 top-2 text-gray-400 hover:text-white text-xs tv-focusable" tabindex="0">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -127,7 +127,7 @@
       <!-- Top Right Search Button on Hero Banner (Exact position requested) -->
       <div class="absolute top-4 right-4 z-20 flex items-center gap-2">
         <button id="heroSearchBtn" onclick="toggleSearchInput()"
-          class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/40 hover:bg-black/70 border border-white/25 text-white flex items-center justify-center backdrop-blur-md shadow-xl active:scale-90 transition cursor-pointer"
+          class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/40 hover:bg-black/70 border border-white/25 text-white flex items-center justify-center backdrop-blur-md shadow-xl active:scale-90 transition cursor-pointer tv-focusable" tabindex="0"
           title="Search">
           <i class="fa-solid fa-magnifying-glass text-sm"></i>
         </button>
@@ -160,17 +160,17 @@
         <!-- Hero Buttons -->
         <div class="flex flex-wrap items-center gap-3 pt-2">
           <button id="heroPlayBtn" onclick="playHeroMedia()"
-            class="flex items-center space-x-2 bg-white text-black hover:bg-neutral-200 active:scale-95 transition-all font-bold px-6 py-2.5 rounded-md shadow-xl text-base">
+            class="flex items-center space-x-2 bg-white text-black hover:bg-neutral-200 active:scale-95 transition-all font-bold px-6 py-2.5 rounded-md shadow-xl text-base tv-focusable" tabindex="0">
             <i class="fa-solid fa-play"></i>
             <span>Play Now</span>
           </button>
           <button id="heroInfoBtn" onclick="openHeroDetails()"
-            class="flex items-center space-x-2 bg-neutral-800/90 hover:bg-neutral-700 active:scale-95 text-white transition-all font-semibold px-5 py-2.5 rounded-md border border-neutral-500/30 text-base">
+            class="flex items-center space-x-2 bg-neutral-800/90 hover:bg-neutral-700 active:scale-95 text-white transition-all font-semibold px-5 py-2.5 rounded-md border border-neutral-500/30 text-base tv-focusable" tabindex="0">
             <i class="fa-solid fa-circle-info"></i>
             <span>More Info</span>
           </button>
           <button id="heroAddListBtn" onclick="toggleHeroWatchlist()"
-            class="flex items-center justify-center w-11 h-11 rounded-full border border-neutral-500/50 bg-neutral-800/60 hover:bg-neutral-700/80 active:scale-90 text-white transition">
+            class="flex items-center justify-center w-11 h-11 rounded-full border border-neutral-500/50 bg-neutral-800/60 hover:bg-neutral-700/80 active:scale-90 text-white transition tv-focusable" tabindex="0">
             <i id="heroAddListIcon" class="fa-solid fa-plus"></i>
           </button>
         </div>
@@ -184,7 +184,7 @@
           <span>Studios &amp; Platforms</span>
         </h2>
         <button id="resetPlatformBtn" onclick="selectPlatform('all', null)"
-          class="hidden text-xs text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-full transition">
+          class="hidden text-xs text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-full transition tv-focusable" tabindex="0">
           <i class="fa-solid fa-arrow-left mr-1"></i> Back to All
         </button>
       </div>
@@ -200,73 +200,73 @@
         <div id="studiosCarousel" class="flex items-center gap-3 sm:gap-4 overflow-x-auto py-3 px-1 scrollbar-none">
           <!-- Netflix (ID: 8) -->
           <div data-platform-id="8" onclick="selectPlatform(8, this, 'Netflix Originals', '#E50914')"
-            class="studio-card studio-netflix" title="Netflix">
+            class="studio-card studio-netflix tv-focusable" tabindex="0" title="Netflix">
             <img src="/platform/Logonetflix.svg" alt="Netflix">
           </div>
 
           <!-- Amazon Prime Video (ID: 9) -->
           <div data-platform-id="9" onclick="selectPlatform(9, this, 'Prime Video', '#00A8E1')"
-            class="studio-card studio-prime" title="Prime Video">
+            class="studio-card studio-prime tv-focusable" tabindex="0" title="Prime Video">
             <img src="/platform/Amazon_Prime_Video_logo.svg" alt="Prime Video">
           </div>
 
           <!-- AMC+ (ID: 526) -->
           <div data-platform-id="526" onclick="selectPlatform(526, this, 'AMC+ Series', '#00D8C9')"
-            class="studio-card studio-amc" title="AMC+">
+            class="studio-card studio-amc tv-focusable" tabindex="0" title="AMC+">
             <img src="/platform/amclogo@2x.png" alt="AMC+">
           </div>
 
           <!-- Apple TV+ (ID: 350) -->
           <div data-platform-id="350" onclick="selectPlatform(350, this, 'Apple TV+ Originals', '#FFFFFF')"
-            class="studio-card studio-apple" title="Apple TV+">
+            class="studio-card studio-apple tv-focusable" tabindex="0" title="Apple TV+">
             <img src="/platform/Apple_TV_logo.svg" alt="Apple TV+">
           </div>
 
           <!-- Crunchyroll (ID: 283) -->
           <div data-platform-id="283" onclick="selectPlatform(283, this, 'Crunchyroll Anime', '#F47521')"
-            class="studio-card studio-crunchyroll" title="Crunchyroll">
+            class="studio-card studio-crunchyroll tv-focusable" tabindex="0" title="Crunchyroll">
             <img src="/platform/crunchyroll.svg" alt="Crunchyroll">
           </div>
 
           <!-- Disney+ (ID: 337) -->
           <div data-platform-id="337" onclick="selectPlatform(337, this, 'Disney+ & Marvel', '#113CCF')"
-            class="studio-card studio-disney" title="Disney+">
+            class="studio-card studio-disney tv-focusable" tabindex="0" title="Disney+">
             <img src="/platform/Disney_logo.svg" alt="Disney+">
           </div>
 
           <!-- Hulu (ID: 15) -->
           <div data-platform-id="15" onclick="selectPlatform(15, this, 'Hulu Exclusives', '#1CE783')"
-            class="studio-card studio-hulu" title="Hulu">
+            class="studio-card studio-hulu tv-focusable" tabindex="0" title="Hulu">
             <img src="/platform/Hulu_logo_(2018).svg" alt="Hulu">
           </div>
 
           <!-- Max / HBO (ID: 1899) -->
           <div data-platform-id="1899" onclick="selectPlatform(1899, this, 'Max & HBO', '#9933FF')"
-            class="studio-card studio-max" title="Max / HBO">
+            class="studio-card studio-max tv-focusable" tabindex="0" title="Max / HBO">
             <img src="/platform/hbo-logo.svg" alt="Max / HBO">
           </div>
 
           <!-- Paramount+ (ID: 99) -->
           <div data-platform-id="99" onclick="selectPlatform(99, this, 'Paramount+', '#0064FF')"
-            class="studio-card studio-paramount" title="Paramount+">
+            class="studio-card studio-paramount tv-focusable" tabindex="0" title="Paramount+">
             <img src="/platform/Paramount-_logo.svg" alt="Paramount+">
           </div>
 
           <!-- Peacock (ID: 387) -->
           <div data-platform-id="387" onclick="selectPlatform(387, this, 'Peacock Exclusives', '#00DF89')"
-            class="studio-card studio-peacock" title="Peacock">
+            class="studio-card studio-peacock tv-focusable" tabindex="0" title="Peacock">
             <img src="/platform/peacock.svg" alt="Peacock">
           </div>
 
           <!-- MGM+ (ID: 585) -->
           <div data-platform-id="585" onclick="selectPlatform(585, this, 'MGM+ Originals', '#E0C479')"
-            class="studio-card studio-mgm" title="MGM+">
+            class="studio-card studio-mgm tv-focusable" tabindex="0" title="MGM+">
             <img src="/platform/mgm-logo.svg" alt="MGM+">
           </div>
 
           <!-- Shudder (ID: 999) -->
           <div data-platform-id="999" onclick="selectPlatform(999, this, 'Shudder Horror', '#D40000')"
-            class="studio-card studio-shudder" title="Shudder">
+            class="studio-card studio-shudder tv-focusable" tabindex="0" title="Shudder">
             <img src="/platform/shudder.svg" alt="Shudder">
           </div>
         </div>
@@ -796,7 +796,7 @@
     <span id="toastMsg">Notification message</span>
   </div>
 
-  <script src="/js/app.js?v=50"></script>
+  <script src="/js/app.js?v=51"></script>
 </body>
 
 </html>

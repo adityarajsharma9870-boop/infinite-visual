@@ -669,5 +669,88 @@ body {
   }
 }
 
+/* ==========================================
+   SMART TV & 10-FOOT UI / REMOTE FOCUS SYSTEM
+   ========================================== */
+
+/* TV Mode Cursor Handling: Auto-hide cursor on TV remote interaction */
+body.tv-mode {
+  cursor: none !important;
+}
+body.tv-mode * {
+  cursor: none !important;
+}
+
+/* TV Focusable elements base */
+.tv-focusable {
+  outline: none !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* TV Focus Glow & Scale for Media Cards */
+.media-card:focus,
+.media-card.tv-focused {
+  outline: none !important;
+  border: 3.5px solid #ffffff !important;
+  transform: scale(1.09) !important;
+  z-index: 50 !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95), 0 0 30px rgba(229, 9, 20, 0.95), 0 16px 36px rgba(0, 0, 0, 0.95) !important;
+}
+
+.media-card:focus .card-overlay,
+.media-card.tv-focused .card-overlay {
+  opacity: 1 !important;
+}
+
+/* TV Focus for Studio/Platform Cards */
+.studio-card:focus,
+.studio-card.tv-focused {
+  outline: none !important;
+  border: 3.5px solid #ffffff !important;
+  transform: translateY(-5px) scale(1.08) !important;
+  z-index: 50 !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95), 0 0 26px rgba(255, 255, 255, 0.8), 0 12px 28px rgba(0, 0, 0, 0.85) !important;
+}
+
+/* TV Focus for Buttons, Links & Chips */
+#heroPlayBtn:focus,
+#heroPlayBtn.tv-focused,
+#heroInfoBtn:focus,
+#heroInfoBtn.tv-focused,
+#heroAddListBtn:focus,
+#heroAddListBtn.tv-focused,
+#modalPrimaryPlayBtn:focus,
+#modalPrimaryPlayBtn.tv-focused,
+.nav-link:focus,
+.nav-link.tv-focused,
+.search-filter-chip:focus,
+.search-filter-chip.tv-focused,
+.sheet-option-btn:focus,
+.sheet-option-btn.tv-focused,
+.tv-focusable:focus,
+.tv-focusable.tv-focused {
+  outline: none !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 0 0 3.5px #ffffff, 0 0 25px rgba(229, 9, 20, 0.9) !important;
+  transform: scale(1.06) !important;
+}
+
+.episode-card:focus,
+.episode-card.tv-focused {
+  border: 2px solid #E50914 !important;
+  background-color: #262626 !important;
+  box-shadow: 0 0 0 2px #E50914, 0 0 22px rgba(229, 9, 20, 0.7) !important;
+  transform: translateX(8px) scale(1.02) !important;
+}
+
+/* TV Safe Area & 10-Foot Readability */
+@media screen and (min-width: 1400px), screen and (min-device-aspect-ratio: 16/9) and (min-width: 1200px) {
+  body {
+    padding-left: env(safe-area-inset-left, 24px);
+    padding-right: env(safe-area-inset-right, 24px);
+  }
+}
+
+
 
 
