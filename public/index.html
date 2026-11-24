@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
     rel="stylesheet">
   <!-- Fully Precompiled Offline & Smart-TV Production Stylesheet (Zero CDN lag, zero runtime errors) -->
-  <link rel="stylesheet" href="/css/compiled.css?v=56">
+  <link rel="stylesheet" href="/css/compiled.css?v=57">
   <!-- Custom Video Player Engines: Hls.js & ArtPlayer -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js"></script>
@@ -557,11 +557,11 @@
         <!-- Player Engine Switcher Pill -->
         <select id="playerEngineSelect" onchange="changePlayerEngine(this.value)"
           class="bg-neutral-900 border border-neutral-700 text-neutral-300 text-[11px] font-semibold rounded-lg px-2 py-1 focus:outline-none cursor-pointer">
-          <option value="custom" selected>⚡ Direct High-Speed Player</option>
+          <option value="custom" selected>⚡ Direct High-Speed (No Ads)</option>
+          <option value="autoembed">🚀 AutoEmbed Server (TV Safe)</option>
+          <option value="vidlink">🔥 VidLink Server (Multi-Audio)</option>
           <option value="vidbolt">🎬 VidBolt Server</option>
           <option value="vidsrc">🌐 VidSrc Server</option>
-          <option value="autoembed">🚀 AutoEmbed Server</option>
-          <option value="vidlink">🔥 VidLink Server</option>
         </select>
         <!-- Fullscreen Button -->
         <button onclick="togglePlayerFullscreen()"
@@ -575,10 +575,13 @@
     <!-- Video Stage Container (16:9 responsive) -->
     <div id="playerVideoStage"
       class="relative w-full aspect-video max-h-[46vh] sm:max-h-[55vh] bg-black flex items-center justify-center overflow-hidden flex-shrink-0">
-      <!-- 1. Custom Native Player (ArtPlayer / Native Video) -->
-      <div id="artplayerContainer" class="w-full h-full absolute inset-0 z-10"></div>
+      <!-- 1. Native Video Player (Rock-solid, hardware accelerated on TV, mobile & PC) -->
+      <video id="nativePlayerVideo" controls playsinline autoplay class="w-full h-full bg-black absolute inset-0 z-10 hidden"></video>
 
-      <!-- 2. Fallback Iframe (Only when Embed Mode selected) -->
+      <!-- 2. Custom Player / Loading Container -->
+      <div id="artplayerContainer" class="w-full h-full absolute inset-0 z-10 hidden"></div>
+
+      <!-- 3. Fallback Iframe (Only when Embed Mode selected) -->
       <iframe id="videoIframe" src="" class="w-full h-full border-0 absolute inset-0 z-0 hidden"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowfullscreen>
@@ -798,7 +801,7 @@
     <span id="toastMsg">Notification message</span>
   </div>
 
-  <script src="/js/app.js?v=56"></script>
+  <script src="/js/app.js?v=57"></script>
 </body>
 
 </html>

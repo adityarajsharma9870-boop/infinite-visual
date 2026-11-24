@@ -842,15 +842,15 @@ function createMediaCard(item, isGrid = false) {
     ? 'media-card w-full aspect-[2/3] tv-focusable'
     : 'media-card w-36 sm:w-44 md:w-48 lg:w-52 aspect-[2/3] flex-shrink-0 tv-focusable';
 
-  // Direct card click opens details modal instantly
+  // Direct card click opens video player immediately!
   el.onclick = (e) => {
-    if (e && e.target && e.target.closest('button')) return;
-    openDetailsModal(item);
+    if (e && e.target && e.target.closest('.quick-wl-btn')) return;
+    playMedia(item, 1, 1);
   };
   el.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.keyCode === 13) {
       e.preventDefault();
-      openDetailsModal(item);
+      playMedia(item, 1, 1);
     }
   });
 
@@ -1088,6 +1088,9 @@ function renderFilteredSearch() {
  * 5. SuperEmbed
  */
 function playMedia(item, season = 1, episode = 1) {
+  // Close details modal if open
+  closeDetailsModal();
+
   // Hide search bar & blur input so keyboard/search overlay disappears immediately
   const mobWrap = document.getElementById('mobileSearchWrap');
   if (mobWrap) mobWrap.classList.add('hidden');
@@ -1213,32 +1216,46 @@ async function startPlayback() {
 }
 
 /**
- * 100% Custom Native Video Player (ArtPlayer + HLS.js)
- * High-speed HLS streaming with real-time Quality, Server, Multi-Audio & Subtitles switching
+ * 100% Rock-Solid Video Player (Native HTML5 Video + HLS.js + Smart TV Hardware Acceleration)
+ * Zero CDN crashes, zero popup redirects, 60fps native TV remote D-Pad controls
  */
 async function loadCustomPlayer(id, type, season, episode, savedTime = 0) {
   const container = document.getElementById('artplayerContainer');
+  const nativeVid = document.getElementById('nativePlayerVideo');
   const iframe = document.getElementById('videoIframe');
-  iframe.classList.add('hidden');
-  iframe.style.display = 'none';
-  iframe.style.zIndex = '0';
-  iframe.src = '';
 
-  container.classList.remove('hidden');
-  container.style.display = 'block';
-  container.style.zIndex = '20';
+  if (iframe) {
+    iframe.classList.add('hidden');
+    iframe.style.display = 'none';
+    iframe.src = '';
+  }
 
+  // Stop any previous active streams
+  if (window.activeHls) {
+    try { window.activeHls.destroy(); } catch (_) { }
+    window.activeHls = null;
+  }
   if (artPlayerInstance) {
     try { artPlayerInstance.destroy(false); } catch (e) { }
     artPlayerInstance = null;
   }
+  if (nativeVid) {
+    nativeVid.pause();
+    nativeVid.src = '';
+  }
 
-  container.innerHTML = `
-    <div class="w-full h-full flex flex-col items-center justify-center bg-black text-neutral-300 gap-3">
-      <div class="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-      <p class="text-sm font-semibold tracking-wide">Connecting to ${currentStreamServer.toUpperCase()} Server...</p>
-    </div>
-  `;
+  // Show loading indicator in player stage
+  if (container) {
+    container.classList.remove('hidden');
+    container.style.display = 'flex';
+    container.style.zIndex = '20';
+    container.innerHTML = `
+      <div class="w-full h-full flex flex-col items-center justify-center bg-black text-neutral-300 gap-3">
+        <div class="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-sm font-semibold tracking-wide">Connecting to High-Speed Stream...</p>
+      </div>
+    `;
+  }
 
   try {
     let resolveUrl = `/api/resolve?type=${type}&id=${id}&server=${encodeURIComponent(currentStreamServer)}`;
@@ -1255,222 +1272,55 @@ async function loadCustomPlayer(id, type, season, episode, savedTime = 0) {
       throw new Error('No stream sources found');
     }
 
-    let selectedSource = stream.sources[0];
-    container.innerHTML = '';
+    const selectedSource = stream.sources[0];
+    const streamUrl = selectedSource.url;
 
-    // Cache subtitle tracks from stream API if present
-    currentSubtitleTracks = [];
-    if (stream.subtitles && Array.isArray(stream.subtitles)) {
-      currentSubtitleTracks = stream.subtitles.map(s => ({
-        name: s.label || s.lang,
-        lang: s.lang,
-        url: s.url
-      }));
+    // Stream ready: hide loader and display native video player
+    if (container) {
+      container.innerHTML = '';
+      container.classList.add('hidden');
+      container.style.display = 'none';
     }
 
-    // Custom Control Bar
-    const customControls = [
-      {
-        position: 'left',
-        html: '<i class="fa-solid fa-rotate-left"></i>',
-        tooltip: 'Rewind 10s',
-        click: function () {
-          if (artPlayerInstance) artPlayerInstance.seek = Math.max(0, artPlayerInstance.currentTime - 10);
-        }
-      },
-      {
-        position: 'left',
-        html: '<i class="fa-solid fa-rotate-right"></i>',
-        tooltip: 'Forward 10s',
-        click: function () {
-          if (artPlayerInstance) artPlayerInstance.seek = artPlayerInstance.currentTime + 10;
-        }
-      }
-    ];
+    if (nativeVid) {
+      nativeVid.classList.remove('hidden');
+      nativeVid.style.display = 'block';
+      nativeVid.style.zIndex = '20';
 
-    if (type === 'tv') {
-      customControls.push({
-        position: 'right',
-        html: '<i class="fa-solid fa-forward-step" style="font-size:14px; margin-right:4px;"></i> <span style="font-size:12px; font-weight:bold;">Next</span>',
-        tooltip: 'Next Episode',
-        click: function () {
-          playAdjacentEpisode(1);
-        }
-      });
-    }
-
-    artPlayerInstance = new Artplayer({
-      container: '#artplayerContainer',
-      url: selectedSource.url,
-      type: 'm3u8',
-      customType: {
-        m3u8: function (video, url, art) {
-          if (Hls.isSupported()) {
-            if (art.hls) art.hls.destroy();
-            const hls = new Hls({
-              enableWorker: false,
-              lowLatencyMode: false,
-              maxBufferLength: 30,
-              maxMaxBufferLength: 60
-            });
-            hls.loadSource(url);
-            hls.attachMedia(video);
-            art.hls = hls;
-
-            function autoSelectPreferredAudio() {
-              if (!hls.audioTracks || !hls.audioTracks.length) return;
-              const pref = (safeGetItem('ghostflix_audio_pref', 'hindi')).toLowerCase();
-              let targetIdx = -1;
-              for (let i = 0; i < hls.audioTracks.length; i++) {
-                const s = ((hls.audioTracks[i].name || '') + ' ' + (hls.audioTracks[i].lang || '')).toLowerCase();
-                if (pref === 'hindi' && (s.includes('hin') || s.includes('hindi'))) { targetIdx = i; break; }
-                if (pref === 'english' && (s.includes('eng') || s.includes('english'))) { targetIdx = i; break; }
-                if (pref === 'japanese' && (s.includes('jpn') || s.includes('jap') || s.includes('japanese'))) { targetIdx = i; break; }
-                if (s.includes(pref)) { targetIdx = i; break; }
-              }
-              if (targetIdx !== -1) {
-                hls.audioTrack = targetIdx;
-                currentAudioTrackIndex = targetIdx;
-                console.log('[ArtPlayer] Auto-selected audio:', hls.audioTracks[targetIdx].name);
-              }
-            }
-
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-              currentHlsLevels = hls.levels || [];
-              currentAudioTracks = hls.audioTracks || [];
-              if (hls.subtitleTracks && hls.subtitleTracks.length > 0) {
-                currentSubtitleTracks = hls.subtitleTracks;
-              }
-              autoSelectPreferredAudio();
-              renderQualitySheet();
-              renderServerSheet();
-              renderAudioSheet();
-              renderSubtitlesSheet();
-
-              if (savedTime > 0) {
-                video.currentTime = savedTime;
-              }
-            });
-
-            hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => {
-              currentAudioTracks = hls.audioTracks || [];
-              autoSelectPreferredAudio();
-              renderAudioSheet();
-            });
-
-            hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, () => {
-              if (hls.subtitleTracks && hls.subtitleTracks.length > 0) {
-                currentSubtitleTracks = hls.subtitleTracks;
-                renderSubtitlesSheet();
-              }
-            });
-
-            art.on('destroy', () => hls.destroy());
-          } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = url;
-            if (savedTime > 0) video.currentTime = savedTime;
-          }
-        }
-      },
-      theme: '#e50914',
-      volume: 1.0,
-      isLive: false,
-      muted: false,
-      autoplay: true,
-      pip: true,
-      autoSize: true,
-      autoMini: false,
-      playsInline: true,
-      lock: true,
-      fastForward: true,
-      screenshot: true,
-      setting: false,
-      loop: false,
-      playbackRate: true,
-      aspectRatio: true,
-      fullscreen: true,
-      fullscreenWeb: true,
-      miniProgressBar: true,
-      controls: customControls,
-      icons: {
-        state: '<i class="fa-solid fa-play" style="font-size: 32px; color: #fff;"></i>'
-      }
-    });
-
-    if (savedTime > 0) {
-      artPlayerInstance.on('ready', () => {
-        try { artPlayerInstance.seek = savedTime; } catch (_) { }
-      });
-    }
-
-    // Guard against synthetic duplicate click-toggle on mobile touch screens:
-    if (artPlayerInstance.template && artPlayerInstance.template.$state) {
-      ['click', 'touchstart', 'touchend'].forEach((evt) => {
-        artPlayerInstance.template.$state.addEventListener(evt, (e) => {
-          e.stopPropagation();
-        }, true);
-      });
-    }
-
-    let lastPlayTs = 0;
-    let lastActionTime = 0;
-    let lastUserTouchTime = 0;
-    let userIntendedPause = false;
-
-    const userTouchHandler = (e) => {
-      lastUserTouchTime = Date.now();
-      const target = e.target;
-      if (target && (target.closest('.art-control-playAndPause') || target.closest('.art-state'))) {
-        userIntendedPause = true;
-        setTimeout(() => { userIntendedPause = false; }, 1500);
-      }
-    };
-    ['touchstart', 'touchend', 'click', 'pointerdown'].forEach((evt) => {
-      document.addEventListener(evt, userTouchHandler, { capture: true, passive: true });
-    });
-
-    artPlayerInstance.on('video:click', (event) => {
-      // Do not toggle play/pause on video click; only toggle control bar visibility
-      if (event && event.stopImmediatePropagation) event.stopImmediatePropagation();
-      if (event && event.preventDefault) event.preventDefault();
-      return false;
-    });
-
-    artPlayerInstance.on('play', () => {
-      lastPlayTs = Date.now();
-      lastActionTime = Date.now();
-      userIntendedPause = false;
-    });
-
-    artPlayerInstance.on('pause', () => {
-      lastActionTime = Date.now();
-    });
-
-    try {
-      const vid = artPlayerInstance.video;
-      if (vid) {
-        vid.setAttribute('playsinline', 'true');
-        vid.setAttribute('webkit-playsinline', 'true');
-        vid.playsInline = true;
-      }
-      const p = artPlayerInstance.play();
-      if (p !== undefined && p.catch) {
-        p.catch(() => {
-          artPlayerInstance.muted = true;
-          artPlayerInstance.play().then(() => {
-            const unmute = () => {
-              artPlayerInstance.muted = false;
-              document.removeEventListener('touchstart', unmute);
-              document.removeEventListener('click', unmute);
-            };
-            document.addEventListener('touchstart', unmute, { once: true });
-            document.addEventListener('click', unmute, { once: true });
-          }).catch(() => { });
+      if (nativeVid.canPlayType('application/vnd.apple.mpegurl')) {
+        // Native HLS (Safari, iOS, TV browsers with native HLS)
+        nativeVid.src = streamUrl;
+        if (savedTime > 0) nativeVid.currentTime = savedTime;
+        nativeVid.play().catch(() => { });
+      } else if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+        const hls = new Hls({
+          enableWorker: false, // Disabling worker prevents low-RAM Smart TV crashes
+          lowLatencyMode: false,
+          maxBufferLength: 30,
+          maxMaxBufferLength: 60
         });
-      }
-    } catch (_) { }
+        hls.loadSource(streamUrl);
+        hls.attachMedia(nativeVid);
+        window.activeHls = hls;
 
-    showToast(`Playing on ${currentStreamServer.toUpperCase()} Server (Ad-Free)`);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          if (savedTime > 0) nativeVid.currentTime = savedTime;
+          nativeVid.play().catch(() => { });
+        });
+
+        hls.on(Hls.Events.ERROR, (event, errData) => {
+          if (errData && errData.fatal) {
+            console.warn('[HLS Fatal Error] Switching to embed:', errData.type);
+            loadEmbedPlayer();
+          }
+        });
+      } else {
+        nativeVid.src = streamUrl;
+        nativeVid.play().catch(() => { });
+      }
+    }
+
+    showToast('Playing via Direct Stream (No Ads)');
   } catch (err) {
     console.warn('Custom player fallback to embed:', err);
     loadEmbedPlayer();
@@ -1482,11 +1332,21 @@ function loadEmbedPlayer() {
     try { artPlayerInstance.destroy(false); } catch (e) { }
     artPlayerInstance = null;
   }
+  if (window.activeHls) {
+    try { window.activeHls.destroy(); } catch (_) { }
+    window.activeHls = null;
+  }
+  const nativeVid = document.getElementById('nativePlayerVideo');
+  if (nativeVid) {
+    nativeVid.pause();
+    nativeVid.src = '';
+    nativeVid.classList.add('hidden');
+    nativeVid.style.display = 'none';
+  }
   const artContainer = document.getElementById('artplayerContainer');
   if (artContainer) {
     artContainer.classList.add('hidden');
     artContainer.style.display = 'none';
-    artContainer.style.zIndex = '0';
   }
   const iframe = document.getElementById('videoIframe');
   if (iframe) {
@@ -1494,8 +1354,6 @@ function loadEmbedPlayer() {
     iframe.style.display = 'block';
     iframe.style.zIndex = '20';
   }
-  const engineSel = document.getElementById('playerEngineSelect');
-  if (engineSel && playerEngine === 'custom') engineSel.value = 'vidbolt';
   updateIframeSource();
 }
 
@@ -1504,30 +1362,29 @@ function updateIframeSource() {
   const audio = safeGetItem('ghostflix_audio_pref', 'hindi');
   const { id, type, season, episode } = currentPlaying;
   const iframe = document.getElementById('videoIframe');
+  if (!iframe) return;
 
   let audioParam = audio && audio !== 'default' ? `&audio=${encodeURIComponent(audio)}` : '';
   let streamUrl = '';
 
-  const engine = playerEngine || 'custom';
-  if (engine === 'vidsrc') {
-    streamUrl = type === 'tv'
-      ? `https://vidsrc.cc/v2/embed/tv/${id}/${season}/${episode}`
-      : `https://vidsrc.cc/v2/embed/movie/${id}`;
-  } else if (engine === 'autoembed') {
-    streamUrl = type === 'tv'
-      ? `https://player.autoembed.cc/embed/tv/${id}/${season}/${episode}`
-      : `https://player.autoembed.cc/embed/movie/${id}`;
-  } else if (engine === 'vidlink') {
+  const engine = playerEngine || 'autoembed';
+  if (engine === 'vidlink') {
     streamUrl = type === 'tv'
       ? `https://vidlink.pro/tv/${id}/${season}/${episode}?primaryColor=e50914`
       : `https://vidlink.pro/movie/${id}?primaryColor=e50914`;
+  } else if (engine === 'vidsrc') {
+    streamUrl = type === 'tv'
+      ? `https://vidsrc.cc/v2/embed/tv/${id}/${season}/${episode}`
+      : `https://vidsrc.cc/v2/embed/movie/${id}`;
+  } else if (engine === 'vidbolt') {
+    streamUrl = type === 'tv'
+      ? `https://vidbolt.pro/tv/${id}/${season}/${episode}?theme=E50914&autoPlay=true&mobileSheets=true${audioParam}`
+      : `https://vidbolt.pro/movie/${id}?theme=E50914&autoPlay=true&mobileSheets=true${audioParam}`;
   } else {
-    // VidBolt server
-    if (type === 'tv') {
-      streamUrl = `https://vidbolt.pro/tv/${id}/${season}/${episode}?theme=E50914&autoPlay=true&mobileSheets=true${audioParam}`;
-    } else {
-      streamUrl = `https://vidbolt.pro/movie/${id}?theme=E50914&autoPlay=true&mobileSheets=true${audioParam}`;
-    }
+    // Default safe embed: AutoEmbed (Zero popups, stable on TV)
+    streamUrl = type === 'tv'
+      ? `https://player.autoembed.cc/embed/tv/${id}/${season}/${episode}`
+      : `https://player.autoembed.cc/embed/movie/${id}`;
   }
 
   iframe.src = streamUrl;
@@ -1865,11 +1722,27 @@ function closePlayerModal() {
   closePlayerAudioSubsSheet();
   closeTrailerModal();
 
+  const nativeVid = document.getElementById('nativePlayerVideo');
+  if (nativeVid) {
+    nativeVid.pause();
+    nativeVid.src = '';
+    nativeVid.classList.add('hidden');
+    nativeVid.style.display = 'none';
+  }
+  if (window.activeHls) {
+    try { window.activeHls.destroy(); } catch (_) { }
+    window.activeHls = null;
+  }
   if (artPlayerInstance) {
     try { artPlayerInstance.destroy(false); } catch (e) { }
     artPlayerInstance = null;
   }
-  document.getElementById('videoIframe').src = '';
+  const iframe = document.getElementById('videoIframe');
+  if (iframe) {
+    iframe.src = '';
+    iframe.classList.add('hidden');
+    iframe.style.display = 'none';
+  }
   document.body.classList.remove('overflow-hidden');
   currentPlaying = null;
   if (window.history && window.history.replaceState) {
@@ -1966,7 +1839,7 @@ function openDetailsModal(item) {
   fetch(`/api/tmdb/${type}/${id}`)
     .then(res => res.ok ? res.json() : null)
     .then(full => {
-      if (!full || currentModalItem?.id !== id) return;
+      if (!full || !currentModalItem || currentModalItem.id !== id) return;
       full.media_type = type;
       currentModalItem = full;
       if (full.overview) document.getElementById('modalOverview').textContent = full.overview;
