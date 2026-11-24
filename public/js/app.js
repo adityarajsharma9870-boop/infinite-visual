@@ -333,105 +333,31 @@ function initStudiosCarouselGestures() {
   if (!carousel || carousel._gesturesInitialized) return;
   carousel._gesturesInitialized = true;
 
-  let isMouseDown = false;
-  let mouseStartX = 0;
-  let mouseScrollLeft = 0;
-  let hasMoved = false;
-
-  // Mouse drag support for desktop / BlueStacks click-and-drag
-  carousel.addEventListener('mousedown', (e) => {
-    isMouseDown = true;
-    hasMoved = false;
-    mouseStartX = e.pageX;
-    mouseScrollLeft = carousel.scrollLeft;
-    carousel.style.cursor = 'grabbing';
-  });
-
-  window.addEventListener('mouseup', () => {
-    if (isMouseDown) {
-      isMouseDown = false;
-      carousel.style.cursor = '';
-      setTimeout(() => { hasMoved = false; }, 80);
-    }
-  });
-
-  carousel.addEventListener('mousemove', (e) => {
-    if (!isMouseDown) return;
-    const diff = e.pageX - mouseStartX;
-    if (Math.abs(diff) > 4) {
-      hasMoved = true;
-      e.preventDefault();
-      carousel.scrollLeft = mouseScrollLeft - diff;
-    }
-  });
-
-  // Touch swipe & drag tracking for mobile
-  let touchActive = false;
-  let touchStartX = 0;
-  let touchStartY = 0;
-  let touchScrollLeft = 0;
-  let isTouchHorizontal = false;
-
-  carousel.addEventListener('touchstart', (e) => {
-    if (e.touches && e.touches.length === 1) {
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
-      touchScrollLeft = carousel.scrollLeft;
-      touchActive = true;
-      isTouchHorizontal = false;
-      hasMoved = false;
-    }
-  }, { passive: true });
-
-  carousel.addEventListener('touchmove', (e) => {
-    if (!touchActive || !e.touches || e.touches.length !== 1) return;
-    const curX = e.touches[0].clientX;
-    const curY = e.touches[0].clientY;
-    const dx = curX - touchStartX;
-    const dy = curY - touchStartY;
-
-    if (!isTouchHorizontal) {
-      if (Math.abs(dx) > 14 && Math.abs(dx) > Math.abs(dy) * 1.3) {
-        isTouchHorizontal = true;
-      }
-    }
-
-    if (isTouchHorizontal) {
-      if (Math.abs(dx) > 16) {
-        hasMoved = true;
-      }
-      carousel.scrollLeft = touchScrollLeft - dx;
-    }
-  }, { passive: true });
-
-  const finishTouch = () => {
-    touchActive = false;
-    isTouchHorizontal = false;
-    setTimeout(() => { hasMoved = false; }, 80);
-  };
-
-  carousel.addEventListener('touchend', finishTouch, { passive: true });
-  carousel.addEventListener('touchcancel', finishTouch, { passive: true });
-
-  // Suppress click event if user was swiping/dragging!
-  carousel.addEventListener('click', (e) => {
-    if (hasMoved) {
+  // Direct click & TV remote Enter-key listener on each studio card
+  carousel.querySelectorAll('.studio-card').forEach(card => {
+    card.style.cursor = 'pointer';
+    card.onclick = (e) => {
       e.stopPropagation();
-      e.preventDefault();
-      hasMoved = false;
-    }
-  }, true);
+      const pid = card.getAttribute('data-platform-id');
+      if (pid) {
+        const id = parseInt(pid, 10);
+        const title = card.getAttribute('title') || 'Platform';
+        selectPlatform(id, card, title);
+      }
+    };
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.keyCode === 13) {
+        e.preventDefault();
+        card.click();
+      }
+    });
+  });
 }
 
 async function selectPlatform(platformId, cardElement, title, brandColor, type) {
   const defaultRows = document.getElementById('defaultRowsContainer');
   const showcaseWrap = document.getElementById('platformShowcaseWrap');
   const resetBtn = document.getElementById('resetPlatformBtn');
-
-  // If already viewing this platform and user clicks the same card without changing type -> toggle off
-  if (currentPlatformId === platformId && !type && platformId !== 'all') {
-    return selectPlatform('all', null);
-  }
 
   // Remove active from all studio cards and platform chips and clear inline style
   document.querySelectorAll('.studio-card, .platform-chip').forEach(c => {
@@ -443,8 +369,14 @@ async function selectPlatform(platformId, cardElement, title, brandColor, type) 
   if (platformId === 'all') {
     currentPlatformId = null;
     if (resetBtn) resetBtn.classList.add('hidden');
-    if (showcaseWrap) showcaseWrap.classList.add('hidden');
-    if (defaultRows) defaultRows.classList.remove('hidden');
+    if (showcaseWrap) {
+      showcaseWrap.classList.add('hidden');
+      showcaseWrap.style.display = 'none';
+    }
+    if (defaultRows) {
+      defaultRows.classList.remove('hidden');
+      defaultRows.style.display = 'block';
+    }
     window.location.hash = 'home';
     return;
   }
@@ -502,10 +434,15 @@ async function selectPlatform(platformId, cardElement, title, brandColor, type) 
     history.replaceState(null, '', newHash);
   }
 
-  // Hide default rows and show showcase (NO auto-scroll up!)
-  if (defaultRows) defaultRows.classList.add('hidden');
+  // Switch display: Hide default rows and show showcase with smooth scroll
+  if (defaultRows) {
+    defaultRows.classList.add('hidden');
+    defaultRows.style.display = 'none';
+  }
   if (showcaseWrap) {
     showcaseWrap.classList.remove('hidden');
+    showcaseWrap.style.display = 'block';
+    showcaseWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   const grid = document.getElementById('platformShowcaseGrid');
