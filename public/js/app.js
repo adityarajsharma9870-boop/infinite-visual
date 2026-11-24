@@ -336,6 +336,7 @@ function initStudiosCarouselGestures() {
   // Direct click & TV remote Enter-key listener on each studio card
   carousel.querySelectorAll('.studio-card').forEach(card => {
     card.style.cursor = 'pointer';
+    card.style.touchAction = 'manipulation';
     card.onclick = (e) => {
       e.stopPropagation();
       const pid = card.getAttribute('data-platform-id');
@@ -358,6 +359,23 @@ async function selectPlatform(platformId, cardElement, title, brandColor, type) 
   const defaultRows = document.getElementById('defaultRowsContainer');
   const showcaseWrap = document.getElementById('platformShowcaseWrap');
   const resetBtn = document.getElementById('resetPlatformBtn');
+
+  // Close search and my list if open, ensure mainContent is visible
+  const searchSec = document.getElementById('searchResultsSection');
+  if (searchSec) {
+    searchSec.classList.add('hidden');
+    searchSec.style.display = 'none';
+  }
+  const myListSec = document.getElementById('myListSection');
+  if (myListSec) {
+    myListSec.classList.add('hidden');
+    myListSec.style.display = 'none';
+  }
+  const mainCont = document.getElementById('mainContent');
+  if (mainCont) {
+    mainCont.classList.remove('hidden');
+    mainCont.style.display = 'block';
+  }
 
   // Remove active from all studio cards and platform chips and clear inline style
   document.querySelectorAll('.studio-card, .platform-chip').forEach(c => {
@@ -771,13 +789,16 @@ function createMediaCard(item, isGrid = false) {
   const title = item.title || item.name || 'Untitled';
   const year = (item.release_date || item.first_air_date || '').substring(0, 4);
   const rating = item.vote_average ? item.vote_average.toFixed(1) : '';
-  const posterUrl = `${TMDB_IMAGE_BASE}${POSTER_SIZE}${item.poster_path}`;
+  const imgPath = item.poster_path || item.backdrop_path;
+  const posterUrl = imgPath ? `${TMDB_IMAGE_BASE}${POSTER_SIZE}${imgPath}` : 'https://via.placeholder.com/300x450/111/fff?text=No+Poster';
 
   const el = document.createElement('div');
   el.tabIndex = 0;
   el.className = isGrid
     ? 'media-card w-full aspect-[2/3] tv-focusable'
     : 'media-card w-36 sm:w-44 md:w-48 lg:w-52 aspect-[2/3] flex-shrink-0 tv-focusable';
+  el.style.touchAction = 'manipulation';
+  el.style.cursor = 'pointer';
 
   // Direct card click opens video player immediately!
   el.onclick = (e) => {
@@ -845,6 +866,7 @@ function getSkeletonCards(count = 6, isGrid = false) {
 function initSearch() {
   const input = document.getElementById('searchInput');
   const mobInput = document.getElementById('mobileSearchInput');
+  const clearBtn = document.getElementById('clearSearchBtn');
 
   const handleSearch = (val) => {
     clearTimeout(searchTimeout);
@@ -853,38 +875,100 @@ function initSearch() {
       return;
     }
 
-    document.getElementById('clearSearchBtn').classList.remove('hidden');
+    if (clearBtn) clearBtn.classList.remove('hidden');
 
     searchTimeout = setTimeout(async () => {
       await performSearch(val.trim());
-    }, 350);
+    }, 250);
   };
 
-  input.addEventListener('input', (e) => handleSearch(e.target.value));
-  mobInput.addEventListener('input', (e) => {
-    input.value = e.target.value;
-    handleSearch(e.target.value);
-  });
+  const onKeydown = (e) => {
+    if (e.key === 'Enter' || e.keyCode === 13) {
+      e.preventDefault();
+      clearTimeout(searchTimeout);
+      const val = (e.target.value || '').trim();
+      if (val) {
+        performSearch(val);
+      }
+    } else if (e.key === 'ArrowDown' || e.keyCode === 40) {
+      const firstCard = document.querySelector('#searchResultsGrid .media-card');
+      if (firstCard) {
+        e.preventDefault();
+        firstCard.focus();
+      }
+    }
+  };
+
+  if (input) {
+    input.addEventListener('input', (e) => handleSearch(e.target.value));
+    input.addEventListener('change', (e) => handleSearch(e.target.value));
+    input.addEventListener('keydown', onKeydown);
+  }
+
+  if (mobInput) {
+    mobInput.addEventListener('input', (e) => {
+      if (input) input.value = e.target.value;
+      handleSearch(e.target.value);
+    });
+    mobInput.addEventListener('change', (e) => {
+      if (input) input.value = e.target.value;
+      handleSearch(e.target.value);
+    });
+    mobInput.addEventListener('keydown', onKeydown);
+  }
 }
 
 function toggleSearchInput() {
   const container = document.getElementById('mobileSearchWrap');
   const heroBtn = document.getElementById('heroSearchBtn');
-  container.classList.toggle('hidden');
   const mobInput = document.getElementById('mobileSearchInput');
-  if (!container.classList.contains('hidden')) {
-    if (heroBtn) heroBtn.classList.add('hidden');
-    setTimeout(() => { mobInput.focus(); }, 50);
+  const deskInput = document.getElementById('searchInput');
+
+  // Desktop view: focus desktop search bar directly
+  if (window.innerWidth >= 640 && deskInput) {
+    deskInput.focus();
+    if (deskInput.value && deskInput.value.trim().length > 0) {
+      performSearch(deskInput.value.trim());
+    }
+    return;
+  }
+
+  if (!container) return;
+  const isHidden = container.classList.contains('hidden') || container.style.display === 'none';
+
+  if (isHidden) {
+    container.classList.remove('hidden');
+    container.style.display = 'block';
+    if (heroBtn) {
+      heroBtn.classList.add('hidden');
+      heroBtn.style.display = 'none';
+    }
+    setTimeout(() => {
+      if (mobInput) {
+        mobInput.focus();
+        if (mobInput.value && mobInput.value.trim().length > 0) {
+          performSearch(mobInput.value.trim());
+        }
+      }
+    }, 50);
   } else {
-    if (heroBtn) heroBtn.classList.remove('hidden');
+    container.classList.add('hidden');
+    container.style.display = 'none';
+    if (heroBtn) {
+      heroBtn.classList.remove('hidden');
+      heroBtn.style.display = '';
+    }
     closeSearch();
   }
 }
 
 function clearSearch() {
-  document.getElementById('searchInput').value = '';
-  document.getElementById('mobileSearchInput').value = '';
-  document.getElementById('clearSearchBtn').classList.add('hidden');
+  const input = document.getElementById('searchInput');
+  const mobInput = document.getElementById('mobileSearchInput');
+  const clearBtn = document.getElementById('clearSearchBtn');
+  if (input) input.value = '';
+  if (mobInput) mobInput.value = '';
+  if (clearBtn) clearBtn.classList.add('hidden');
   closeSearch();
 }
 
@@ -914,48 +998,56 @@ function closeSearch() {
     myListSec.classList.add('hidden');
     myListSec.style.display = 'none';
   }
+  window.lastSearchResults = [];
 }
 
 async function performSearch(query) {
+  if (!query || !query.trim()) {
+    closeSearch();
+    return;
+  }
+  const cleanQuery = query.trim();
+
   const searchSec = document.getElementById('searchResultsSection');
-  searchSec.classList.remove('hidden');
-  searchSec.style.display = 'block';
+  if (searchSec) {
+    searchSec.classList.remove('hidden');
+    searchSec.style.display = 'block';
+  }
 
   const mainCont = document.getElementById('mainContent');
-  mainCont.classList.add('hidden');
-  mainCont.style.display = 'none';
+  if (mainCont) {
+    mainCont.classList.add('hidden');
+    mainCont.style.display = 'none';
+  }
 
   const myListSec = document.getElementById('myListSection');
-  myListSec.classList.add('hidden');
-  myListSec.style.display = 'none';
+  if (myListSec) {
+    myListSec.classList.add('hidden');
+    myListSec.style.display = 'none';
+  }
 
-  document.getElementById('searchQueryLabel').textContent = `Showing results for "${query}"`;
+  const qLabel = document.getElementById('searchQueryLabel');
+  if (qLabel) qLabel.textContent = `Showing results for "${cleanQuery}"`;
 
   const grid = document.getElementById('searchResultsGrid');
   const empty = document.getElementById('searchEmptyState');
-  grid.innerHTML = getSkeletonCards(12, true);
-  empty.classList.add('hidden');
-  empty.style.display = 'none';
+  if (grid) grid.innerHTML = getSkeletonCards(12, true);
+  if (empty) {
+    empty.classList.add('hidden');
+    empty.style.display = 'none';
+  }
+
+  // Smooth scroll to results
+  if (searchSec && typeof searchSec.scrollIntoView === 'function') {
+    searchSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   try {
-    const cleanQuery = query.trim();
     let res = await fetch(`/api/tmdb/search/multi?query=${encodeURIComponent(cleanQuery)}`);
-    if (!res.ok) throw new Error('Search failed');
-    let data = await res.json();
+    let data = res.ok ? await res.json() : { results: [] };
     let results = (data.results || []).filter(item => item.media_type === 'movie' || item.media_type === 'tv');
 
-    // Fallback 1: trailing 1 (e.g. stree1 -> stree)
-    if (results.length === 0 && /1$/.test(cleanQuery)) {
-      const q1 = cleanQuery.replace(/1$/, '').trim();
-      const res1 = await fetch(`/api/tmdb/search/multi?query=${encodeURIComponent(q1)}`);
-      if (res1.ok) {
-        const d1 = await res1.json();
-        const r1 = (d1.results || []).filter(item => item.media_type === 'movie' || item.media_type === 'tv');
-        if (r1.length > 0) results = r1;
-      }
-    }
-
-    // Fallback 2: letter+digit without space (e.g. stree2 -> stree 2, kgf2 -> kgf 2)
+    // Fallback 1: letter+digit without space (e.g. stree2 -> stree 2, kgf2 -> kgf 2)
     if (results.length === 0 && /([a-zA-Z]+)(\d+)/.test(cleanQuery)) {
       const q2 = cleanQuery.replace(/([a-zA-Z]+)(\d+)/g, '$1 $2').trim();
       const res2 = await fetch(`/api/tmdb/search/multi?query=${encodeURIComponent(q2)}`);
@@ -966,12 +1058,37 @@ async function performSearch(query) {
       }
     }
 
+    // Fallback 2: trailing 1 (e.g. stree1 -> stree)
+    if (results.length === 0 && /1$/.test(cleanQuery)) {
+      const q1 = cleanQuery.replace(/1$/, '').trim();
+      const res1 = await fetch(`/api/tmdb/search/multi?query=${encodeURIComponent(q1)}`);
+      if (res1.ok) {
+        const d1 = await res1.json();
+        const r1 = (d1.results || []).filter(item => item.media_type === 'movie' || item.media_type === 'tv');
+        if (r1.length > 0) results = r1;
+      }
+    }
+
+    // Fallback 3: direct movie & tv search endpoints if multi-search had 0 results
+    if (results.length === 0) {
+      const [mRes, tRes] = await Promise.all([
+        fetch(`/api/tmdb/search/movie?query=${encodeURIComponent(cleanQuery)}`).then(r => r.ok ? r.json() : { results: [] }).catch(() => ({ results: [] })),
+        fetch(`/api/tmdb/search/tv?query=${encodeURIComponent(cleanQuery)}`).then(r => r.ok ? r.json() : { results: [] }).catch(() => ({ results: [] }))
+      ]);
+      const mList = (mRes.results || []).map(i => ({ ...i, media_type: 'movie' }));
+      const tList = (tRes.results || []).map(i => ({ ...i, media_type: 'tv' }));
+      results = [...mList, ...tList];
+    }
+
     window.lastSearchResults = results;
     renderFilteredSearch();
   } catch (e) {
-    grid.innerHTML = '';
-    empty.classList.remove('hidden');
-    empty.style.display = 'block';
+    console.error('Search error:', e);
+    if (grid) grid.innerHTML = '';
+    if (empty) {
+      empty.classList.remove('hidden');
+      empty.style.display = 'block';
+    }
   }
 }
 
@@ -997,17 +1114,26 @@ function renderFilteredSearch() {
     filtered = allResults.filter(i => (i.genre_ids && i.genre_ids.includes(16)) || i.original_language === 'ja');
   }
 
+  if (!grid) return;
   grid.innerHTML = '';
-  if (filtered.length === 0) {
-    empty.classList.remove('hidden');
-    empty.style.display = 'block';
+
+  // Filter to items that have either poster or backdrop
+  const validItems = filtered.filter(i => i && (i.poster_path || i.backdrop_path));
+
+  if (validItems.length === 0) {
+    if (empty) {
+      empty.classList.remove('hidden');
+      empty.style.display = 'block';
+    }
   } else {
-    empty.classList.add('hidden');
-    empty.style.display = 'none';
-    filtered.forEach(item => {
-      if (item.poster_path) {
-        grid.appendChild(createMediaCard(item, true));
-      }
+    if (empty) {
+      empty.classList.add('hidden');
+      empty.style.display = 'none';
+    }
+    validItems.forEach((item, idx) => {
+      const card = createMediaCard(item, true);
+      card.id = `searchCard_${idx}`;
+      grid.appendChild(card);
     });
   }
 }
@@ -1653,8 +1779,10 @@ function playAdjacentEpisode(direction) {
 
 function closePlayerModal() {
   const modal = document.getElementById('playerModal');
-  modal.classList.add('hidden');
-  modal.style.display = 'none';
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+  }
   closePlayerSettingsSheet();
   closePlayerAudioSubsSheet();
   closeTrailerModal();
@@ -1682,10 +1810,24 @@ function closePlayerModal() {
   }
   document.body.classList.remove('overflow-hidden');
   currentPlaying = null;
-  if (window.history && window.history.replaceState) {
-    window.history.replaceState(null, '', window.location.pathname);
+
+  // Restore hash route gracefully without wiping search or platform catalog
+  const searchSec = document.getElementById('searchResultsSection');
+  const isSearchActive = searchSec && !searchSec.classList.contains('hidden') && searchSec.style.display !== 'none';
+  if (isSearchActive) {
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', '#search');
+    }
+  } else if (currentPlatformId) {
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', `#platforms?id=${currentPlatformId}&type=${currentPlatformType}`);
+    }
   } else {
-    window.location.hash = '';
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', window.location.pathname);
+    } else {
+      window.location.hash = '';
+    }
   }
 }
 
@@ -2067,6 +2209,7 @@ function showToast(message) {
   var touchStartX = null;
   var touchStartY = null;
   var hasSwiped = false;
+  var isInteractiveTarget = false;
 
   function getPoint(e) {
     var p = (e.touches && e.touches.length) ? e.touches[0] : ((e.changedTouches && e.changedTouches.length) ? e.changedTouches[0] : e);
@@ -2077,6 +2220,16 @@ function showToast(message) {
   }
 
   function onGestureStart(e) {
+    // Check if touch target is interactive or a scrollable element
+    var target = e.target;
+    if (target && target.closest && target.closest('#studiosCarousel, .row-scroll, .media-card, .studio-card, button, input, select, #playerModal, #detailsModal, #searchResultsSection')) {
+      isInteractiveTarget = true;
+      touchStartX = null;
+      touchStartY = null;
+      hasSwiped = false;
+      return;
+    }
+    isInteractiveTarget = false;
     var pt = getPoint(e);
     touchStartX = pt.x;
     touchStartY = pt.y;
@@ -2084,7 +2237,7 @@ function showToast(message) {
   }
 
   function onGestureMove(e) {
-    if (touchStartX === null || hasSwiped) return;
+    if (isInteractiveTarget || touchStartX === null || hasSwiped) return;
     var pt = getPoint(e);
     var deltaX = pt.x - touchStartX;
     var deltaY = pt.y - touchStartY;
@@ -2094,7 +2247,7 @@ function showToast(message) {
     var detailsModal = document.getElementById('detailsModal');
     if (detailsModal && !detailsModal.classList.contains('hidden')) return;
 
-    if (deltaX > 35 && deltaX > Math.abs(deltaY) * 1.2) {
+    if (deltaX > 75 && deltaX > Math.abs(deltaY) * 1.5) {
       hasSwiped = true;
       touchStartX = null;
       touchStartY = null;
@@ -2105,9 +2258,10 @@ function showToast(message) {
   }
 
   function onGestureEnd(e) {
-    if (touchStartX === null || hasSwiped) {
+    if (isInteractiveTarget || touchStartX === null || hasSwiped) {
       touchStartX = null;
       touchStartY = null;
+      isInteractiveTarget = false;
       return;
     }
     var pt = getPoint(e);
@@ -2121,7 +2275,7 @@ function showToast(message) {
     var detailsModal = document.getElementById('detailsModal');
     if (detailsModal && !detailsModal.classList.contains('hidden')) return;
 
-    if (deltaX > 30 && deltaX > Math.abs(deltaY) * 1.2) {
+    if (deltaX > 65 && deltaX > Math.abs(deltaY) * 1.5) {
       hasSwiped = true;
       if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
         window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SWIPE_RIGHT_TO_PLAYMAX' }));

@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
     rel="stylesheet">
   <!-- Fully Precompiled Offline & Smart-TV Production Stylesheet (Zero CDN lag, zero runtime errors) -->
-  <link rel="stylesheet" href="/css/compiled.css?v=59">
+  <link rel="stylesheet" href="/css/compiled.css?v=60">
   <!-- Custom Video Player Engines: Hls.js & ArtPlayer -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js"></script>
@@ -68,7 +68,7 @@
 
   <!-- Search Bar Overlay (Slides open when search is clicked) -->
   <div id="mobileSearchWrap"
-    class="fixed top-0 left-0 right-0 z-[60] px-3 sm:px-6 py-2.5 bg-neutral-950 border-b border-neutral-800 hidden shadow-2xl" style="display: none;">
+    class="fixed top-0 left-0 right-0 z-[60] px-3 sm:px-6 py-2.5 bg-neutral-950 border-b border-neutral-800 hidden shadow-2xl">
     <div class="max-w-2xl mx-auto flex items-center gap-2">
       <div class="relative flex-1">
         <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 text-xs pointer-events-none"></i>
@@ -582,7 +582,7 @@
       <div id="artplayerContainer" class="w-full h-full absolute inset-0 z-10 hidden"></div>
 
       <!-- 3. Fallback Iframe (Only when Embed Mode selected) -->
-      <iframe id="videoIframe" src="" class="w-full h-full border-0 absolute inset-0 z-0 hidden"
+      <iframe id="videoIframe" src="" class="w-full h-full border-0 absolute inset-0 z-20 hidden"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowfullscreen>
       </iframe>
@@ -801,7 +801,7 @@
     <span id="toastMsg">Notification message</span>
   </div>
 
-  <script src="/js/app.js?v=59"></script>
+  <script src="/js/app.js?v=60"></script>
 </body>
 
 </html>
