@@ -1,0 +1,673 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-red: #e50914;
+  --bg-dark: #141414;
+  --bg-darker: #0b0b0c;
+  --card-bg: #1f1f1f;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-darker);
+  color: #ffffff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #111;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Text glow & shadows */
+.text-shadow {
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+}
+.logo-glow {
+  text-shadow: 0 0 15px rgba(229, 9, 20, 0.4);
+}
+
+/* Hero Vignette Gradients - Vibrant, Crystal-Clear Picture with Soft Bottom Fade */
+.hero-vignette {
+  background: linear-gradient(
+    77deg,
+    rgba(0, 0, 0, 0.65) 0%,
+    rgba(0, 0, 0, 0.25) 45%,
+    rgba(0, 0, 0, 0.0) 80%
+  ),
+  linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 0.0) 20%,
+    rgba(0, 0, 0, 0.0) 45%,
+    rgba(10, 10, 12, 0.75) 75%,
+    rgba(10, 10, 12, 1) 100%
+  );
+}
+
+/* Card Hover Animation & Rock-Solid Responsive Dimensions */
+.media-card {
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #1a1a1a;
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s ease;
+  cursor: pointer;
+  width: 140px;
+  height: 210px;
+  aspect-ratio: 2 / 3;
+}
+
+@media (min-width: 640px) {
+  .media-card {
+    width: 170px;
+    height: 255px;
+  }
+}
+
+@media (min-width: 768px) {
+  .media-card {
+    width: 190px;
+    height: 285px;
+  }
+}
+
+.row-scroll {
+  min-height: 215px;
+  display: flex;
+}
+
+.shimmer {
+  width: 140px;
+  height: 210px;
+  aspect-ratio: 2 / 3;
+  flex-shrink: 0;
+}
+
+.media-card:hover {
+  transform: scale(1.06);
+  z-index: 25;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(229, 9, 20, 0.3);
+}
+
+.media-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s ease;
+}
+
+.card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(0, 0, 0, 0.95) 100%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 10px;
+}
+
+.media-card:hover .card-overlay {
+  opacity: 1;
+}
+
+/* Quick Play Button in Overlay */
+.quick-play-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #fff;
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.quick-play-btn:hover {
+  transform: scale(1.1);
+  background-color: var(--primary-red);
+  color: #fff;
+}
+
+/* Search Filter Chips */
+.search-filter-chip {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 9999px;
+  background-color: #222;
+  color: #bbb;
+  border: 1px solid #333;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.search-filter-chip:hover {
+  background-color: #333;
+  color: #fff;
+}
+
+.search-filter-chip.active {
+  background-color: var(--primary-red);
+  color: #fff;
+  border-color: var(--primary-red);
+}
+
+/* Platform & Studio Brand Cards (Ghostflix Style) */
+.studios-carousel-wrap {
+  position: relative;
+  margin: 6px 0 16px 0;
+}
+
+/* Carousel scroll buttons: strictly hidden on mobile/touch, only subtle on desktop hover */
+.studio-scroll-btn {
+  display: none !important;
+}
+
+@media (min-width: 1024px) {
+  .studios-carousel-wrap {
+    position: relative;
+  }
+  .studio-scroll-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(18, 18, 18, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #fff;
+    display: none !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  }
+  .studios-carousel-wrap:hover .studio-scroll-btn {
+    display: flex !important;
+  }
+  .studio-scroll-btn:hover {
+    background: rgba(255, 255, 255, 0.95);
+    color: #000;
+    transform: translateY(-50%) scale(1.08);
+  }
+  .studio-scroll-btn.prev {
+    left: -12px;
+  }
+  .studio-scroll-btn.next {
+    right: -12px;
+  }
+}
+
+#studiosCarousel {
+  padding-top: 14px !important;
+  padding-bottom: 20px !important;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  touch-action: auto !important;
+  scroll-behavior: auto !important;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.studio-card {
+  min-width: 145px;
+  max-width: 175px;
+  height: 80px;
+  flex-shrink: 0;
+  border-radius: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box !important;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+@media (min-width: 640px) {
+  .studio-card {
+    min-width: 170px;
+    max-width: 190px;
+    height: 92px;
+    padding: 16px;
+  }
+}
+.studio-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.studio-card.active {
+  border: 2.5px solid #ffffff !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Individual Brand Glows matching each OTT platform */
+.studio-netflix.active {
+  border-color: #E50914 !important;
+  box-shadow: 0 0 18px rgba(229, 9, 20, 0.85), 0 8px 26px rgba(229, 9, 20, 0.55) !important;
+}
+.studio-prime.active {
+  border-color: #00A8E1 !important;
+  box-shadow: 0 0 18px rgba(0, 168, 225, 0.9), 0 8px 26px rgba(0, 168, 225, 0.6) !important;
+}
+.studio-amc.active {
+  border-color: #00D8C9 !important;
+  box-shadow: 0 0 18px rgba(0, 216, 201, 0.9), 0 8px 26px rgba(0, 216, 201, 0.6) !important;
+}
+.studio-apple.active {
+  border-color: #FFFFFF !important;
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.9), 0 8px 26px rgba(255, 255, 255, 0.5) !important;
+}
+.studio-crunchyroll.active {
+  border-color: #F47521 !important;
+  box-shadow: 0 0 18px rgba(244, 117, 33, 0.9), 0 8px 26px rgba(244, 117, 33, 0.6) !important;
+}
+.studio-disney.active {
+  border-color: #113CCF !important;
+  box-shadow: 0 0 18px rgba(17, 60, 207, 0.9), 0 8px 26px rgba(17, 60, 207, 0.6) !important;
+}
+.studio-hulu.active {
+  border-color: #1CE783 !important;
+  box-shadow: 0 0 18px rgba(28, 231, 131, 0.9), 0 8px 26px rgba(28, 231, 131, 0.6) !important;
+}
+.studio-max.active {
+  border-color: #9933FF !important;
+  box-shadow: 0 0 18px rgba(153, 51, 255, 0.9), 0 8px 26px rgba(153, 51, 255, 0.6) !important;
+}
+.studio-paramount.active {
+  border-color: #0064FF !important;
+  box-shadow: 0 0 18px rgba(0, 100, 255, 0.9), 0 8px 26px rgba(0, 100, 255, 0.6) !important;
+}
+.studio-peacock.active {
+  border-color: #00DF89 !important;
+  box-shadow: 0 0 18px rgba(0, 223, 137, 0.9), 0 8px 26px rgba(0, 223, 137, 0.6) !important;
+}
+.studio-mgm.active {
+  border-color: #E0C479 !important;
+  box-shadow: 0 0 18px rgba(224, 196, 121, 0.9), 0 8px 26px rgba(224, 196, 121, 0.6) !important;
+}
+.studio-shudder.active {
+  border-color: #D40000 !important;
+  box-shadow: 0 0 18px rgba(212, 0, 0, 0.9), 0 8px 26px rgba(212, 0, 0, 0.6) !important;
+}
+.studio-card img {
+  max-height: 38px;
+  max-width: 82%;
+  width: auto;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+  transition: transform 0.25s ease;
+}
+.studio-card:hover img {
+  transform: scale(1.05);
+}
+
+/* Brand Card Gradients exactly matching Ghostflix */
+.studio-netflix {
+  background: linear-gradient(135deg, #870d10 0%, #300508 60%, #160203 100%);
+}
+.studio-prime {
+  background: linear-gradient(135deg, #0d3b61 0%, #06223b 60%, #021221 100%);
+}
+.studio-amc {
+  background: linear-gradient(135deg, #3d3016 0%, #251d0c 60%, #120e05 100%);
+}
+.studio-apple {
+  background: linear-gradient(135deg, #2b2b2b 0%, #181818 60%, #0d0d0d 100%);
+}
+.studio-crunchyroll {
+  background: linear-gradient(135deg, #613110 0%, #3d1e08 60%, #1f0f03 100%);
+}
+.studio-disney {
+  background: linear-gradient(135deg, #163f96 0%, #0c2661 60%, #061436 100%);
+}
+.studio-hulu {
+  background: linear-gradient(135deg, #074628 0%, #042a17 60%, #02160b 100%);
+}
+.studio-max {
+  background: linear-gradient(135deg, #3b1473 0%, #220947 60%, #110424 100%);
+}
+.studio-paramount {
+  background: linear-gradient(135deg, #00368a 0%, #002257 60%, #001230 100%);
+}
+.studio-peacock {
+  background: linear-gradient(135deg, #0a3d40 0%, #052527 60%, #021415 100%);
+}
+.studio-mgm {
+  background: linear-gradient(135deg, #4d3a0f 0%, #2f2207 60%, #171103 100%);
+}
+.studio-shudder {
+  background: linear-gradient(135deg, #4a0d12 0%, #290508 60%, #140203 100%);
+}
+
+/* Platform Chips */
+.platform-chip {
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.platform-chip:hover {
+  transform: translateY(-2px);
+}
+.platform-chip.active {
+  background-color: #262626;
+  border-color: var(--primary-red);
+  box-shadow: 0 0 16px rgba(229, 9, 20, 0.4);
+}
+
+/* Platform Infinite Scroll Loader & Banner */
+.infinite-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 0 48px;
+  color: #aaa;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.infinite-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--primary-red);
+  border-radius: 50%;
+  animation: infiniteSpin 0.75s linear infinite;
+}
+
+@keyframes infiniteSpin {
+  to { transform: rotate(360deg); }
+}
+
+.platform-header-banner {
+  border-radius: 16px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+}
+
+@media (min-width: 640px) {
+  .platform-header-banner {
+    border-radius: 20px;
+    padding: 22px;
+  }
+}
+
+/* Ensure media cards in any grid stretch to 100% of their column */
+#platformShowcaseGrid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+@media (min-width: 640px) {
+  #platformShowcaseGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+}
+@media (min-width: 768px) {
+  #platformShowcaseGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+@media (min-width: 1024px) {
+  #platformShowcaseGrid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+}
+@media (min-width: 1280px) {
+  #platformShowcaseGrid {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  }
+}
+
+#platformShowcaseGrid .media-card,
+#platformShowcaseGrid .shimmer,
+#searchGrid .media-card,
+#searchGrid .shimmer,
+#favoritesGrid .media-card,
+#favoritesGrid .shimmer,
+.grid .media-card,
+.grid .shimmer {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  flex: 1 1 0% !important;
+  aspect-ratio: 2 / 3 !important;
+}
+
+/* Ensure filter chips in platform header fill width evenly on mobile */
+.platform-header-banner .search-filter-chip,
+.platform-header-banner button {
+  flex: 1 1 0% !important;
+  text-align: center !important;
+  justify-content: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 8px 4px !important;
+  font-size: 12px !important;
+  min-width: 0 !important;
+}
+
+@media (min-width: 768px) {
+  .platform-header-banner .search-filter-chip,
+  .platform-header-banner button {
+    flex: initial !important;
+    padding: 6px 16px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* Modal styles */
+.modal-card {
+  animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Episode item card */
+.episode-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background-color: #1e1e1e;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Player Toolbar Glassmorphism & Transitions */
+#playerTopBar, #playerBottomBar {
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#artplayerContainer, .artplayer-app, .art-video-player {
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute !important;
+  inset: 0 !important;
+}
+
+.art-video-player .art-theme {
+  background-color: var(--primary-red) !important;
+}
+
+#playerTopBar select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right center;
+  background-size: 14px;
+  padding-right: 18px;
+}
+
+.episode-card:hover {
+  background-color: #292929;
+  border-color: var(--primary-red);
+}
+
+.episode-card.active {
+  border-color: var(--primary-red);
+  background-color: rgba(229, 9, 20, 0.1);
+}
+
+.episode-thumb {
+  width: 90px;
+  height: 52px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* Shimmer placeholder */
+.shimmer {
+  background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Eliminate Android WebView GPU compositing artifacts & frosted white blur boxes */
+@media (max-width: 1024px) {
+  *, *::before, *::after {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+/* ==================================================
+   Bottom Sheet Options & Modern Action Controls (VidBolt Style)
+   ================================================== */
+.sheet-option-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #e5e5e5;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sheet-option-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.sheet-option-btn.active {
+  background: rgba(229, 9, 20, 0.15) !important;
+  border-color: rgba(229, 9, 20, 0.7) !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.sheet-server-heart {
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 13px;
+  transition: transform 0.15s ease;
+}
+
+.sheet-server-heart:active {
+  transform: scale(1.3);
+}
+
+.sheet-server-heart.favorited {
+  color: #ef4444 !important;
+}
+
+.sheet-slide-up {
+  animation: sheetSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes sheetSlideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+
+

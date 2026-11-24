@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>PlayMax — Stream Movies, TV Shows & Anime Free</title>
+  <link rel="icon" href="/playmax-emblem.png">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Custom Video Player Engines: Hls.js & ArtPlayer -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js"></script>
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css?v=35">
+</head>
+
+<body class="bg-black text-white font-sans antialiased overflow-x-hidden">
+
+  <!-- Navbar -->
+  <header id="navbar"
+    class="hidden md:flex fixed top-0 left-0 right-0 z-40 transition-all duration-300 px-4 md:px-12 py-3 items-center justify-between bg-gradient-to-b from-black/90 via-black/50 to-transparent">
+    <div class="flex items-center space-x-6 md:space-x-10">
+      <!-- Desktop Nav Links -->
+      <nav class="flex items-center space-x-6 text-sm font-medium text-gray-300">
+        <a href="#home" class="nav-link active hover:text-white transition" onclick="showHome(event)">Home</a>
+        <a href="#movies" class="nav-link hover:text-white transition"
+          onclick="filterCategory('movie', event)">Movies</a>
+        <a href="#tv" class="nav-link hover:text-white transition" onclick="filterCategory('tv', event)">TV Shows</a>
+        <a href="#anime" class="nav-link hover:text-white transition" onclick="filterCategory('anime', event)">Anime</a>
+        <a href="#mylist" class="nav-link hover:text-white transition" onclick="showMyList(event)">My List <span
+            id="myListCount" class="ml-1 text-xs bg-red-600 px-1.5 py-0.5 rounded-full hidden">0</span></a>
+      </nav>
+    </div>
+
+    <!-- Right Controls: Search & Info -->
+    <div class="flex items-center space-x-4">
+      <!-- Search Bar -->
+      <div class="relative flex items-center">
+        <button id="searchBtn" onclick="toggleSearchInput()"
+          class="text-gray-300 hover:text-white p-2 text-lg focus:outline-none" title="Search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+        <div id="searchContainer" class="relative hidden sm:block">
+          <input type="text" id="searchInput" placeholder="Search Demon Slayer, Marvel, Batman..."
+            class="bg-black/70 border border-neutral-700 text-white placeholder-gray-400 text-sm rounded-full pl-9 pr-8 py-1.5 focus:outline-none focus:border-red-600 focus:bg-black/90 w-44 sm:w-64 md:w-80 transition-all duration-300">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+          <button id="clearSearchBtn" onclick="clearSearch()"
+            class="hidden absolute right-3 top-2 text-gray-400 hover:text-white text-xs">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Server Indicator -->
+      <div
+        class="hidden lg:flex items-center space-x-2 text-xs bg-neutral-900/80 border border-neutral-800 px-3 py-1.5 rounded-full text-neutral-300">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span>VidBolt (Orion / Quasar)</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Search Bar Overlay (Slides open when search is clicked) -->
+  <div id="mobileSearchWrap"
+    class="fixed top-0 left-0 right-0 z-[60] px-3 sm:px-6 py-2.5 bg-neutral-950 border-b border-neutral-800 hidden shadow-2xl">
+    <div class="max-w-2xl mx-auto flex items-center gap-2">
+      <div class="relative flex-1">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 text-xs pointer-events-none"></i>
+        <input type="text" id="mobileSearchInput" placeholder="Search Demon Slayer, Marvel, Batman, Anime..."
+          class="w-full bg-neutral-900 border border-neutral-700 text-white text-sm rounded-xl pl-9 pr-9 py-2 focus:outline-none focus:border-red-600 focus:bg-neutral-800 transition">
+        <button onclick="clearSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1" title="Clear">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
+      <button onclick="toggleSearchInput()"
+        class="text-neutral-300 hover:text-white text-xs font-semibold px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 active:scale-95 transition flex-shrink-0 cursor-pointer">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- Search Results Overlay / Container -->
+  <section id="searchResultsSection" class="hidden min-h-screen pt-24 px-4 md:px-12 pb-16">
+    <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 pb-4 border-b border-neutral-800">
+      <div>
+        <h2 class="text-2xl md:text-3xl font-bold tracking-tight">Search Results</h2>
+        <p id="searchQueryLabel" class="text-neutral-400 text-sm mt-1">Showing results for "..."</p>
+      </div>
+      <!-- Filter Chips -->
+      <div class="flex items-center space-x-2 mt-4 md:mt-0 overflow-x-auto pb-1">
+        <button class="search-filter-chip active" onclick="applySearchFilter('all', this)">All</button>
+        <button class="search-filter-chip" onclick="applySearchFilter('movie', this)">Movies</button>
+        <button class="search-filter-chip" onclick="applySearchFilter('tv', this)">TV Series</button>
+        <button class="search-filter-chip" onclick="applySearchFilter('anime', this)">Anime</button>
+      </div>
+    </div>
+    <div id="searchResultsGrid"
+      class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+      <!-- Injected Search Results -->
+    </div>
+    <div id="searchEmptyState" class="hidden text-center py-20">
+      <i class="fa-regular fa-face-frown text-5xl text-neutral-600 mb-4"></i>
+      <h3 class="text-xl font-semibold text-neutral-300">No results found</h3>
+      <p class="text-neutral-500 text-sm mt-1">Try searching for something else like "Demon Slayer" or "Avengers"</p>
+    </div>
+  </section>
+
+  <!-- Main Browse Home View -->
+  <main id="mainContent" class="pb-20">
+    <!-- Hero Banner -->
+    <section id="heroBanner"
+      class="relative w-full h-[70vh] sm:h-[75vh] md:h-[88vh] flex items-end pb-16 px-4 md:px-12 bg-neutral-950 overflow-hidden">
+      <!-- Backdrop Image with Gradient Vignette -->
+      <div id="heroBackdrop" class="absolute inset-0 overflow-hidden">
+        <img id="heroBackdropImg" src="/images/demon-slayer-hero.jpg" alt="Featured Hero"
+          class="w-full h-full object-cover object-top sm:object-center transform scale-105 transition-all duration-700" />
+        <div class="hero-vignette absolute inset-0"></div>
+      </div>
+
+      <!-- Top Right Search Button on Hero Banner (Exact position requested) -->
+      <div class="absolute top-4 right-4 z-20 flex items-center gap-2">
+        <button id="heroSearchBtn" onclick="toggleSearchInput()"
+          class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/40 hover:bg-black/70 border border-white/25 text-white flex items-center justify-center backdrop-blur-md shadow-xl active:scale-90 transition cursor-pointer"
+          title="Search">
+          <i class="fa-solid fa-magnifying-glass text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Hero Content -->
+      <div class="relative z-10 max-w-2xl space-y-4">
+        <div class="flex items-center space-x-3 text-xs md:text-sm font-semibold text-neutral-300">
+          <span
+            class="bg-red-600 text-white px-2 py-0.5 rounded font-black tracking-widest text-[10px] uppercase">FEATURED</span>
+          <span id="heroTypeBadge"
+            class="bg-neutral-800 px-2.5 py-0.5 rounded border border-neutral-700 uppercase">MOVIE</span>
+          <span id="heroRating" class="text-amber-400 font-bold flex items-center gap-1"><i
+              class="fa-solid fa-star text-xs"></i> 8.8</span>
+          <span id="heroYear" class="text-neutral-400">2025</span>
+          <span class="border border-neutral-600 px-1.5 py-0.2 rounded text-[10px] text-neutral-400">1080p FHD</span>
+        </div>
+
+        <h1 id="heroTitle"
+          class="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight drop-shadow-lg leading-tight">
+          Demon Slayer: Kimetsu no Yaiba Infinity Castle
+        </h1>
+
+        <p id="heroOverview"
+          class="text-sm md:text-base text-neutral-300 line-clamp-3 md:line-clamp-4 leading-relaxed max-w-xl text-shadow">
+          The Demon Slayer Corps are drawn into the Infinity Castle, where Tanjiro, Nezuko, and the Hashira face
+          terrifying Upper Rank demons in a desperate final fight against Muzan Kibutsuji.
+        </p>
+
+        <!-- Hero Buttons -->
+        <div class="flex flex-wrap items-center gap-3 pt-2">
+          <button id="heroPlayBtn" onclick="playHeroMedia()"
+            class="flex items-center space-x-2 bg-white text-black hover:bg-neutral-200 active:scale-95 transition-all font-bold px-6 py-2.5 rounded-md shadow-xl text-base">
+            <i class="fa-solid fa-play"></i>
+            <span>Play Now</span>
+          </button>
+          <button id="heroInfoBtn" onclick="openHeroDetails()"
+            class="flex items-center space-x-2 bg-neutral-800/90 hover:bg-neutral-700 active:scale-95 text-white transition-all font-semibold px-5 py-2.5 rounded-md border border-neutral-500/30 text-base">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>More Info</span>
+          </button>
+          <button id="heroAddListBtn" onclick="toggleHeroWatchlist()"
+            class="flex items-center justify-center w-11 h-11 rounded-full border border-neutral-500/50 bg-neutral-800/60 hover:bg-neutral-700/80 active:scale-90 text-white transition">
+            <i id="heroAddListIcon" class="fa-solid fa-plus"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Studios & Platforms Carousel (Ghostflix Matching UI) -->
+    <div class="px-4 md:px-12 mt-6 sm:mt-8 md:mt-10 relative z-30 mb-8 sm:mb-10">
+      <div class="flex items-center justify-between mb-3.5">
+        <h2 class="text-base sm:text-lg md:text-xl font-bold text-white tracking-wide flex items-center gap-2">
+          <span>Studios &amp; Platforms</span>
+        </h2>
+        <button id="resetPlatformBtn" onclick="selectPlatform('all', null)"
+          class="hidden text-xs text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-full transition">
+          <i class="fa-solid fa-arrow-left mr-1"></i> Back to All
+        </button>
+      </div>
+
+      <div class="studios-carousel-wrap relative group/carousel">
+        <!-- Scroll Left Button -->
+        <button onclick="scrollStudiosCarousel(-1)" class="studio-scroll-btn prev hidden md:flex"
+          aria-label="Scroll left">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+
+        <!-- Carousel Cards Container -->
+        <div id="studiosCarousel" class="flex items-center gap-3 sm:gap-4 overflow-x-auto py-3 px-1 scrollbar-none">
+          <!-- Netflix (ID: 8) -->
+          <div data-platform-id="8" onclick="selectPlatform(8, this, 'Netflix Originals', '#E50914')"
+            class="studio-card studio-netflix" title="Netflix">
+            <img src="/platform/Logonetflix.svg" alt="Netflix">
+          </div>
+
+          <!-- Amazon Prime Video (ID: 9) -->
+          <div data-platform-id="9" onclick="selectPlatform(9, this, 'Prime Video', '#00A8E1')"
+            class="studio-card studio-prime" title="Prime Video">
+            <img src="/platform/Amazon_Prime_Video_logo.svg" alt="Prime Video">
+          </div>
+
+          <!-- AMC+ (ID: 526) -->
+          <div data-platform-id="526" onclick="selectPlatform(526, this, 'AMC+ Series', '#00D8C9')"
+            class="studio-card studio-amc" title="AMC+">
+            <img src="/platform/amclogo@2x.png" alt="AMC+">
+          </div>
+
+          <!-- Apple TV+ (ID: 350) -->
+          <div data-platform-id="350" onclick="selectPlatform(350, this, 'Apple TV+ Originals', '#FFFFFF')"
+            class="studio-card studio-apple" title="Apple TV+">
+            <img src="/platform/Apple_TV_logo.svg" alt="Apple TV+">
+          </div>
+
+          <!-- Crunchyroll (ID: 283) -->
+          <div data-platform-id="283" onclick="selectPlatform(283, this, 'Crunchyroll Anime', '#F47521')"
+            class="studio-card studio-crunchyroll" title="Crunchyroll">
+            <img src="/platform/crunchyroll.svg" alt="Crunchyroll">
+          </div>
+
+          <!-- Disney+ (ID: 337) -->
+          <div data-platform-id="337" onclick="selectPlatform(337, this, 'Disney+ & Marvel', '#113CCF')"
+            class="studio-card studio-disney" title="Disney+">
+            <img src="/platform/Disney_logo.svg" alt="Disney+">
+          </div>
+
+          <!-- Hulu (ID: 15) -->
+          <div data-platform-id="15" onclick="selectPlatform(15, this, 'Hulu Exclusives', '#1CE783')"
+            class="studio-card studio-hulu" title="Hulu">
+            <img src="/platform/Hulu_logo_(2018).svg" alt="Hulu">
+          </div>
+
+          <!-- Max / HBO (ID: 1899) -->
+          <div data-platform-id="1899" onclick="selectPlatform(1899, this, 'Max & HBO', '#9933FF')"
+            class="studio-card studio-max" title="Max / HBO">
+            <img src="/platform/hbo-logo.svg" alt="Max / HBO">
+          </div>
+
+          <!-- Paramount+ (ID: 99) -->
+          <div data-platform-id="99" onclick="selectPlatform(99, this, 'Paramount+', '#0064FF')"
+            class="studio-card studio-paramount" title="Paramount+">
+            <img src="/platform/Paramount-_logo.svg" alt="Paramount+">
+          </div>
+
+          <!-- Peacock (ID: 387) -->
+          <div data-platform-id="387" onclick="selectPlatform(387, this, 'Peacock Exclusives', '#00DF89')"
+            class="studio-card studio-peacock" title="Peacock">
+            <img src="/platform/peacock.svg" alt="Peacock">
+          </div>
+
+          <!-- MGM+ (ID: 585) -->
+          <div data-platform-id="585" onclick="selectPlatform(585, this, 'MGM+ Originals', '#E0C479')"
+            class="studio-card studio-mgm" title="MGM+">
+            <img src="/platform/mgm-logo.svg" alt="MGM+">
+          </div>
+
+          <!-- Shudder (ID: 999) -->
+          <div data-platform-id="999" onclick="selectPlatform(999, this, 'Shudder Horror', '#D40000')"
+            class="studio-card studio-shudder" title="Shudder">
+            <img src="/platform/shudder.svg" alt="Shudder">
+          </div>
+        </div>
+
+        <!-- Scroll Right Button -->
+        <button onclick="scrollStudiosCarousel(1)" class="studio-scroll-btn next hidden md:flex"
+          aria-label="Scroll right">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Dedicated Platform Showcase Grid with Infinite Scroll (Ghostflix Style) -->
+    <div id="platformShowcaseWrap" class="px-3 sm:px-6 md:px-12 mb-16 hidden">
+      <!-- Platform Banner Header -->
+      <div id="platformHeaderBanner" class="platform-header-banner mb-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="flex items-center gap-3 sm:gap-4">
+            <div id="platformLogoBox"
+              class="w-14 h-11 sm:w-20 sm:h-14 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center p-2 shadow-lg flex-shrink-0">
+              <img id="platformBannerLogo" src="/platform/Logonetflix.svg" alt="Platform"
+                class="max-h-full max-w-full object-contain">
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h2 id="platformShowcaseTitle"
+                  class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white">Netflix</h2>
+                <span id="platformCountBadge"
+                  class="text-xs px-2.5 py-0.5 rounded-full bg-neutral-800/90 border border-neutral-700 text-neutral-300 font-semibold">
+                  Infinite Library
+                </span>
+              </div>
+              <p id="platformSubtitle" class="text-xs sm:text-sm text-neutral-400 mt-0.5">Scroll down to explore all
+                movies &amp; shows endlessly</p>
+            </div>
+          </div>
+
+          <!-- Type Filters & Close (Full balanced distribution) -->
+          <div class="flex items-center gap-2 w-full md:w-auto">
+            <button id="filterChipAll"
+              class="search-filter-chip active flex-1 md:flex-initial text-center justify-center"
+              onclick="applyPlatformTypeFilter('all', this)">All</button>
+            <button id="filterChipMovie" class="search-filter-chip flex-1 md:flex-initial text-center justify-center"
+              onclick="applyPlatformTypeFilter('movie', this)">Movies</button>
+            <button id="filterChipTv" class="search-filter-chip flex-1 md:flex-initial text-center justify-center"
+              onclick="applyPlatformTypeFilter('tv', this)">TV Shows</button>
+            <button onclick="selectPlatform('all', null)"
+              class="text-neutral-400 hover:text-white px-3.5 py-1.5 rounded-full bg-neutral-900/90 hover:bg-neutral-800 border border-neutral-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition flex-1 md:flex-initial">
+              <i class="fa-solid fa-xmark"></i> Close
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Media Cards Grid -->
+      <div id="platformShowcaseGrid"
+        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6 w-full">
+        <!-- Injected Platform Cards -->
+      </div>
+
+      <!-- Infinite Scroll Loader -->
+      <div id="platformInfiniteLoader" class="infinite-loader hidden">
+        <div class="infinite-spinner"></div>
+        <span>Loading more titles...</span>
+      </div>
+
+      <!-- Scroll Sentinel for IntersectionObserver -->
+      <div id="platformScrollSentinel" class="h-10 w-full pointer-events-none"></div>
+
+      <!-- End of Catalog Message -->
+      <div id="platformEndMessage" class="hidden text-center py-12 text-neutral-500 text-sm">
+        <i class="fa-solid fa-circle-check text-neutral-600 mb-2 text-xl block"></i>
+        <span>You've explored all titles in this catalog.</span>
+      </div>
+    </div>
+
+    <!-- Content Sections / Category Rows -->
+    <div id="defaultRowsContainer" class="space-y-10 md:space-y-12 relative z-20 px-4 md:px-12">
+
+      <!-- Row: PlayMax Originals -->
+      <section class="media-row">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2">
+            <img src="/playmax-emblem.png" class="w-4 h-4 object-contain" alt="PlayMax">
+            <span>PlayMax Originals</span>
+          </h2>
+          <span class="text-xs text-neutral-400 hover:text-white cursor-pointer"
+            onclick="selectPlatform(8, null, 'PlayMax Originals', '#FF3366')">Explore All →</span>
+        </div>
+        <div id="rowNetflix" class="row-scroll flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-none scroll-smooth">
+          <!-- Injected Cards -->
+        </div>
+      </section>
+
+      <!-- Row: Anime Spotlight -->
+      <section class="media-row">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2">
+            <span class="text-red-500">⚔️</span> Anime Spotlight
+          </h2>
+          <span class="text-xs text-neutral-400 hover:text-white cursor-pointer"
+            onclick="filterCategory('anime')">Explore All →</span>
+        </div>
+        <div id="rowAnime" class="row-scroll flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-none scroll-smooth">
+          <!-- Injected Cards -->
+        </div>
+      </section>
+
+      <!-- Row: Trending Now -->
+      <section class="media-row">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2">
+            <span class="text-red-500">🔥</span> Trending Now
+          </h2>
+        </div>
+        <div id="rowTrending" class="row-scroll flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-none scroll-smooth">
+          <!-- Injected Cards -->
+        </div>
+      </section>
+
+      <!-- Row: Popular Movies -->
+      <section class="media-row">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2">
+            <span class="text-red-500">🎬</span> Popular Movies
+          </h2>
+          <span class="text-xs text-neutral-400 hover:text-white cursor-pointer"
+            onclick="filterCategory('movie')">Explore All →</span>
+        </div>
+        <div id="rowMovies" class="row-scroll flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-none scroll-smooth">
+          <!-- Injected Cards -->
+        </div>
+      </section>
+
+      <!-- Row: Top Series -->
+      <section class="media-row">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2">
+            <span class="text-red-500">📺</span> Binge-Worthy TV Shows
+          </h2>
+          <span class="text-xs text-neutral-400 hover:text-white cursor-pointer" onclick="filterCategory('tv')">Explore
+            All →</span>
+        </div>
+        <div id="rowSeries" class="row-scroll flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-none scroll-smooth">
+          <!-- Injected Cards -->
+        </div>
+      </section>
+
+      <!-- Row: Action & Adventure -->
+      <section class="media-row">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2">
+            <span class="text-red-500">💥</span> Action & Adventure
+          </h2>
+        </div>
+        <div id="rowAction" class="row-scroll flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-none scroll-smooth">
+          <!-- Injected Cards -->
+        </div>
+      </section>
+
+      <!-- Row: K-Dramas & Asian Dramas -->
+      <section class="media-row">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2">
+            <span class="text-red-500">🇰🇷</span> Asian Dramas & K-Dramas
+          </h2>
+        </div>
+        <div id="rowKdrama" class="row-scroll flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-none scroll-smooth">
+          <!-- Injected Cards -->
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- My List Section (hidden by default) -->
+  <section id="myListSection" class="hidden min-h-screen pt-24 px-4 md:px-12 pb-16">
+    <div class="flex items-center justify-between mb-6 pb-4 border-b border-neutral-800">
+      <div>
+        <h2 class="text-2xl md:text-3xl font-bold">My Saved Watchlist</h2>
+        <p class="text-neutral-400 text-sm mt-1">Movies & Anime saved on your device</p>
+      </div>
+      <button onclick="clearMyList()" class="text-xs text-neutral-400 hover:text-red-500 transition">
+        Clear All
+      </button>
+    </div>
+    <div id="myListGrid"
+      class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+      <!-- Injected List Cards -->
+    </div>
+    <div id="myListEmpty" class="text-center py-24 hidden">
+      <i class="fa-regular fa-bookmark text-5xl text-neutral-700 mb-4"></i>
+      <h3 class="text-xl font-medium text-neutral-400">Your Watchlist is empty</h3>
+      <p class="text-neutral-600 text-sm mt-1">Click the '+' button on any movie or series to add it here.</p>
+    </div>
+  </section>
+
+  <!-- Details / Episode Explorer Modal -->
+  <div id="detailsModal"
+    class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 hidden transition-all duration-300">
+    <div
+      class="modal-card bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col relative shadow-2xl">
+      <!-- Close Button -->
+      <button onclick="closeDetailsModal()"
+        class="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-black/70 hover:bg-red-600 text-white flex items-center justify-center transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <!-- Modal Header Backdrop -->
+      <div id="modalBackdropWrap" class="relative h-60 sm:h-80 w-full bg-neutral-950 flex-shrink-0">
+        <img id="modalBackdrop" src="" alt="" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-neutral-900 via-neutral-900/40 to-transparent"></div>
+        <div class="absolute bottom-4 left-4 sm:left-8 right-4 flex items-end justify-between">
+          <div>
+            <h2 id="modalTitle" class="text-2xl sm:text-4xl font-extrabold text-white text-shadow leading-tight"></h2>
+            <div class="flex items-center space-x-3 text-xs text-neutral-300 mt-2">
+              <span id="modalRating" class="text-amber-400 font-bold flex items-center gap-1"></span>
+              <span id="modalYear"></span>
+              <span id="modalTypeBadge"
+                class="bg-red-600/90 text-white px-2 py-0.5 rounded uppercase text-[10px] font-bold"></span>
+            </div>
+          </div>
+          <button id="modalPrimaryPlayBtn" onclick="onModalPlayClicked()"
+            class="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg transition active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-play"></i>
+            <span>Play</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="p-4 sm:p-8 overflow-y-auto space-y-6">
+        <!-- Overview & Genres -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="md:col-span-2 space-y-3">
+            <h3 class="text-sm font-semibold uppercase tracking-wider text-neutral-400">Storyline</h3>
+            <p id="modalOverview" class="text-neutral-300 text-sm leading-relaxed"></p>
+          </div>
+          <div class="space-y-3 text-sm border-t md:border-t-0 md:border-l border-neutral-800 md:pl-6 pt-4 md:pt-0">
+            <div>
+              <span class="text-neutral-500 block text-xs uppercase">Genres</span>
+              <span id="modalGenres" class="text-neutral-300"></span>
+            </div>
+            <div>
+              <span class="text-neutral-500 block text-xs uppercase">Audio / Servers</span>
+              <span class="text-neutral-300">VidBolt (Orion, Quasar), VidLink Multi-Audio</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TV Show / Anime Episodes Section -->
+        <div id="modalEpisodesWrap" class="space-y-4 pt-4 border-t border-neutral-800 hidden">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-bold flex items-center gap-2">
+              <i class="fa-solid fa-list-ol text-red-500"></i> Episodes
+            </h3>
+            <!-- Season Selector Dropdown -->
+            <select id="seasonSelector" onchange="onSeasonChanged(this.value)"
+              class="bg-neutral-800 border border-neutral-700 text-white text-xs sm:text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-red-600">
+              <!-- Injected Seasons -->
+            </select>
+          </div>
+          <!-- Episodes List -->
+          <div id="episodesList" class="space-y-3 max-h-72 overflow-y-auto pr-1">
+            <!-- Injected Episodes -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Player Modal -->
+  <div id="playerModal" class="fixed inset-0 z-[70] bg-black flex flex-col hidden select-none overflow-hidden">
+    <!-- Top Player Bar -->
+    <div id="playerTopBar"
+      class="flex items-center justify-between px-3.5 py-2.5 bg-neutral-950/95 border-b border-neutral-800/80 z-20 flex-shrink-0">
+      <div class="flex items-center space-x-2.5 overflow-hidden">
+        <button onclick="closePlayerModal()"
+          class="w-8 h-8 rounded-full bg-neutral-800/90 hover:bg-red-600 flex items-center justify-center text-white transition active:scale-90 flex-shrink-0"
+          title="Back to Browse">
+          <i class="fa-solid fa-arrow-left text-xs"></i>
+        </button>
+        <div class="truncate">
+          <h2 id="playerMediaTitle" class="text-xs sm:text-sm font-bold text-white truncate leading-tight"></h2>
+          <p id="playerEpisodeInfo" class="text-[10px] text-neutral-400 truncate leading-tight">Movie</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2 flex-shrink-0">
+        <!-- Player Engine Switcher Pill -->
+        <select id="playerEngineSelect" onchange="changePlayerEngine(this.value)"
+          class="bg-neutral-900 border border-neutral-700 text-neutral-300 text-[11px] font-semibold rounded-lg px-2 py-1 focus:outline-none cursor-pointer">
+          <option value="embed" selected>⚡ High-Speed Player (VidBolt)</option>
+          <option value="custom">🔥 Custom Native Player</option>
+        </select>
+        <!-- Fullscreen Button -->
+        <button onclick="togglePlayerFullscreen()"
+          class="w-8 h-8 rounded-full bg-neutral-800/80 hover:bg-neutral-700 flex items-center justify-center text-white transition active:scale-90"
+          title="Fullscreen">
+          <i class="fa-solid fa-expand text-xs"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Video Stage Container (16:9 responsive) -->
+    <div id="playerVideoStage"
+      class="relative w-full aspect-video max-h-[46vh] sm:max-h-[55vh] bg-black flex items-center justify-center overflow-hidden flex-shrink-0">
+      <!-- 1. Custom Native Player (ArtPlayer) -->
+      <div id="artplayerContainer" class="w-full h-full absolute inset-0 z-10"></div>
+
+      <!-- 2. Fallback Iframe (Only when Embed Mode selected) -->
+      <iframe id="videoIframe" src="" class="w-full h-full border-0 absolute inset-0 z-0 hidden"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen>
+      </iframe>
+    </div>
+
+    <!-- SPACE BELOW PLAYER: Modern Action Controls Bar (Requested by User) -->
+    <div id="playerBelowControls"
+      class="px-3 py-2 bg-neutral-950 border-b border-neutral-800/80 grid grid-cols-3 gap-2 flex-shrink-0">
+      <!-- 1. Official YouTube Trailer Button -->
+      <button onclick="openTrailerModal()"
+        class="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-neutral-900/90 hover:bg-neutral-800 border border-neutral-800 text-white text-xs font-semibold active:scale-95 transition shadow-sm">
+        <i class="fa-brands fa-youtube text-red-500 text-sm"></i>
+        <span>Trailer</span>
+      </button>
+
+      <!-- 2. Audio & Subtitles Button (CC) -->
+      <button onclick="openPlayerAudioSubsSheet()"
+        class="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-neutral-900/90 hover:bg-neutral-800 border border-neutral-800 text-white text-xs font-semibold active:scale-95 transition shadow-sm">
+        <span class="border border-neutral-400 text-[10px] font-black px-1 rounded leading-tight">CC</span>
+        <span>Audio &amp; Subs</span>
+      </button>
+
+      <!-- 3. Quality & Server Settings Button -->
+      <button onclick="openPlayerSettingsSheet()"
+        class="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-neutral-900/90 hover:bg-neutral-800 border border-neutral-800 text-white text-xs font-semibold active:scale-95 transition shadow-sm">
+        <i class="fa-solid fa-gear text-neutral-300 text-xs"></i>
+        <span>Quality &amp; Server</span>
+      </button>
+    </div>
+
+    <!-- TV Series / Anime Episodes & Metadata Scrollable Area Below Video -->
+    <div id="playerScrollableArea" class="flex-1 overflow-y-auto px-4 py-3 space-y-3.5">
+      <!-- Quick Episode Navigation (TV & Anime) -->
+      <div id="playerTvNavSection" class="hidden bg-neutral-900/70 border border-neutral-800 rounded-2xl p-3">
+        <div class="flex items-center justify-between mb-2.5">
+          <span class="text-xs font-bold text-neutral-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-list-ol text-red-500"></i> Episodes
+          </span>
+          <select id="playerSeasonSelect" onchange="onPlayerSeasonChanged(this.value)"
+            class="bg-neutral-800 border border-neutral-700 text-white text-xs rounded-lg px-2.5 py-1 focus:outline-none">
+          </select>
+        </div>
+        <div class="flex items-center justify-between gap-2">
+          <button onclick="playAdjacentEpisode(-1)"
+            class="flex-1 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+            <i class="fa-solid fa-backward-step text-xs"></i> Prev Ep
+          </button>
+          <span id="playerCurrentEpBadge"
+            class="px-3 py-1 bg-red-600/20 border border-red-500/40 text-red-400 font-bold text-xs rounded-lg whitespace-nowrap">
+            S1 E1
+          </span>
+          <button onclick="playAdjacentEpisode(1)"
+            class="flex-1 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+            Next Ep <i class="fa-solid fa-forward-step text-xs"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Media Storyline & Details Card -->
+      <div class="bg-neutral-900/50 border border-neutral-800/80 rounded-2xl p-3.5 space-y-2">
+        <div class="flex items-center space-x-2 text-[11px] text-neutral-400">
+          <span id="playerMetaYear" class="text-neutral-300 font-semibold">2025</span>
+          <span>•</span>
+          <span id="playerMetaRating" class="text-amber-400 font-bold flex items-center gap-1"><i
+              class="fa-solid fa-star text-[10px]"></i> 8.8</span>
+          <span>•</span>
+          <span id="playerMetaGenres" class="text-neutral-400 truncate">Action, Anime</span>
+        </div>
+        <p id="playerMetaOverview" class="text-xs text-neutral-300 leading-relaxed line-clamp-3">
+          Loading description...
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quality & Server Bottom Sheet Modal (Matching User Screenshot) -->
+  <div id="playerSettingsSheet" class="fixed inset-0 z-[80] hidden select-none">
+    <!-- Semi-transparent Backdrop -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closePlayerSettingsSheet()"></div>
+
+    <!-- Sheet Dialog -->
+    <div
+      class="absolute inset-x-0 bottom-0 max-h-[82vh] bg-neutral-950 border-t border-neutral-800 rounded-t-3xl shadow-2xl flex flex-col sheet-slide-up">
+      <!-- Pull handle bar -->
+      <div class="w-10 h-1 bg-neutral-700 rounded-full mx-auto my-2.5 cursor-pointer"
+        onclick="closePlayerSettingsSheet()"></div>
+
+      <!-- Sheet Header -->
+      <div class="flex items-center justify-between px-5 pb-2.5 border-b border-neutral-800/80">
+        <h3 class="text-sm font-bold text-white tracking-wide flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-red-500"></i> Stream Settings
+        </h3>
+        <button onclick="closePlayerSettingsSheet()"
+          class="w-7 h-7 rounded-full bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Two Columns (Quality & Server) -->
+      <div class="flex-1 overflow-y-auto px-4 py-3 grid grid-cols-2 gap-3.5">
+        <!-- Column 1: QUALITY -->
+        <div class="space-y-1.5 border-r border-neutral-800/80 pr-2">
+          <div class="text-[11px] font-black uppercase tracking-wider text-neutral-400 mb-2">QUALITY</div>
+          <div id="qualityOptionsList" class="space-y-1.5">
+            <!-- Dynamic Quality options injected via JS -->
+          </div>
+        </div>
+
+        <!-- Column 2: SERVER -->
+        <div class="space-y-1.5 pl-1">
+          <div class="text-[11px] font-black uppercase tracking-wider text-neutral-400 mb-2">SERVER</div>
+          <div id="serverOptionsList" class="space-y-1.5">
+            <!-- Server list injected via JS (Orion, Callisto, Luna, Vega, Quantum, Quasar) with flags and hearts -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Switcher Tabs (Matching User Screenshot) -->
+      <div class="px-4 py-2.5 bg-neutral-900/90 border-t border-neutral-800/80 flex items-center justify-around gap-2">
+        <button
+          class="flex-1 py-2 rounded-xl bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm border border-neutral-700">
+          <i class="fa-solid fa-gear text-xs"></i> Settings
+        </button>
+        <button onclick="switchToAudioSubsSheet()"
+          class="flex-1 py-2 rounded-xl bg-transparent text-neutral-400 hover:text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition">
+          <span class="text-[10px] font-black border border-neutral-500 px-1 rounded">CC</span> Subtitles
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio & Subtitles Bottom Sheet Modal (Matching User Screenshot) -->
+  <div id="playerAudioSubsSheet" class="fixed inset-0 z-[80] hidden select-none">
+    <!-- Semi-transparent Backdrop -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closePlayerAudioSubsSheet()"></div>
+
+    <!-- Sheet Dialog -->
+    <div
+      class="absolute inset-x-0 bottom-0 max-h-[82vh] bg-neutral-950 border-t border-neutral-800 rounded-t-3xl shadow-2xl flex flex-col sheet-slide-up">
+      <!-- Pull handle bar -->
+      <div class="w-10 h-1 bg-neutral-700 rounded-full mx-auto my-2.5 cursor-pointer"
+        onclick="closePlayerAudioSubsSheet()"></div>
+
+      <!-- Sheet Header -->
+      <div class="flex items-center justify-between px-5 pb-2.5 border-b border-neutral-800/80">
+        <h3 class="text-sm font-bold text-white tracking-wide flex items-center gap-2">
+          <i class="fa-solid fa-language text-red-500"></i> Audio &amp; Subtitles
+        </h3>
+        <button onclick="closePlayerAudioSubsSheet()"
+          class="w-7 h-7 rounded-full bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Two Columns (Audio & Subtitles) -->
+      <div class="flex-1 overflow-y-auto px-4 py-3 grid grid-cols-2 gap-3.5">
+        <!-- Column 1: AUDIO -->
+        <div class="space-y-1.5 border-r border-neutral-800/80 pr-2">
+          <div class="text-[11px] font-black uppercase tracking-wider text-neutral-400 mb-2">AUDIO</div>
+          <div id="audioOptionsList" class="space-y-1 max-h-[48vh] overflow-y-auto pr-1">
+            <!-- Dynamic Audio tracks with flags and checkmark injected via JS -->
+          </div>
+        </div>
+
+        <!-- Column 2: SUBTITLES -->
+        <div class="space-y-1.5 pl-1">
+          <div class="text-[11px] font-black uppercase tracking-wider text-neutral-400 mb-2">SUBTITLES</div>
+          <div id="subtitlesOptionsList" class="space-y-1 max-h-[48vh] overflow-y-auto pr-1">
+            <!-- Off, English [CC], Arabic, German, Spanish, etc. injected via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Switcher Tabs -->
+      <div class="px-4 py-2.5 bg-neutral-900/90 border-t border-neutral-800/80 flex items-center justify-around gap-2">
+        <button onclick="switchToSettingsSheet()"
+          class="flex-1 py-2 rounded-xl bg-transparent text-neutral-400 hover:text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition">
+          <i class="fa-solid fa-gear text-xs"></i> Settings
+        </button>
+        <button
+          class="flex-1 py-2 rounded-xl bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm border border-neutral-700">
+          <span class="text-[10px] font-black border border-white px-1 rounded">CC</span> Subtitles
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Official YouTube Trailer Modal -->
+  <div id="playerTrailerModal"
+    class="fixed inset-0 z-[90] hidden select-none flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md">
+    <div
+      class="relative w-full max-w-3xl bg-neutral-950 border border-neutral-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+      <!-- Header -->
+      <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-800/80">
+        <h3 id="trailerTitle" class="text-xs sm:text-sm font-bold text-white truncate flex items-center gap-2">
+          <i class="fa-brands fa-youtube text-red-500 text-base"></i> Official Trailer
+        </h3>
+        <button onclick="closeTrailerModal()"
+          class="w-7 h-7 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
+      <!-- 16:9 Video Embed -->
+      <div class="relative w-full aspect-video bg-black">
+        <iframe id="trailerIframe" src="" class="w-full h-full border-0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast"
+    class="fixed top-5 right-4 z-[100] bg-neutral-900 border border-neutral-700 text-white text-xs px-3.5 py-2 rounded-xl shadow-2xl transition-all duration-300 transform -translate-y-16 opacity-0 pointer-events-none flex items-center gap-2">
+    <i id="toastIcon" class="fa-solid fa-check text-green-500 text-xs"></i>
+    <span id="toastMsg">Notification message</span>
+  </div>
+
+  <script src="/js/app.js?v=50"></script>
+</body>
+
+</html>
