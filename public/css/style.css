@@ -136,6 +136,11 @@ body {
   flex-direction: column;
   justify-content: flex-end;
   padding: 10px;
+  pointer-events: none;
+}
+
+.card-overlay button {
+  pointer-events: auto;
 }
 
 .media-card:hover .card-overlay {
@@ -755,6 +760,13 @@ body.tv-mode * {
 .hidden {
   display: none !important;
 }
+
+/* Eliminate software blur GPU lag for 60fps on Smart TVs */
+* {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
 
 
 

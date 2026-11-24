@@ -26,7 +26,7 @@ function safeSetItem(key, val) {
 // Global state
 let currentPlaying = null; // { id, type, title, season, episode, totalEpisodes }
 let currentAudio = safeGetItem('ghostflix_audio_pref', 'hindi');
-let playerEngine = 'embed'; // 'embed' | 'custom'
+let playerEngine = 'custom'; // 'custom' (Direct HLS - safe & 0 ads) | 'vidbolt' | 'vidsrc' | 'autoembed' | 'vidlink'
 let artPlayerInstance = null;
 let playerInactivityTimer = null;
 let heroMedia = null;
@@ -128,6 +128,11 @@ function handleUrlRouting() {
     const type = params.get('type') || 'movie';
     const season = parseInt(params.get('season') || '1', 10);
     const episode = parseInt(params.get('episode') || '1', 10);
+
+    // Guard: Prevent double-loading or infinite re-triggering loops
+    if (currentPlaying && String(currentPlaying.id) === String(id) && currentPlaying.type === type && currentPlaying.season === season && currentPlaying.episode === episode) {
+      return;
+    }
 
     if (id) {
       launchDirectPlay(id, type, season, episode);
@@ -836,7 +841,12 @@ function createMediaCard(item, isGrid = false) {
   el.className = isGrid
     ? 'media-card w-full aspect-[2/3] tv-focusable'
     : 'media-card w-36 sm:w-44 md:w-48 lg:w-52 aspect-[2/3] flex-shrink-0 tv-focusable';
-  el.onclick = () => openDetailsModal(item);
+
+  // Direct card click opens details modal instantly
+  el.onclick = (e) => {
+    if (e && e.target && e.target.closest('button')) return;
+    openDetailsModal(item);
+  };
   el.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.keyCode === 13) {
       e.preventDefault();
@@ -848,11 +858,10 @@ function createMediaCard(item, isGrid = false) {
     <img src="${posterUrl}" alt="${title}" loading="lazy" onerror="this.src='https://via.placeholder.com/300x450/111/fff?text=No+Poster'">
     <div class="card-overlay">
       <div class="flex items-center justify-between mb-2">
-        <button class="quick-play-btn" onclick="event.stopPropagation(); playMedia(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+        <button class="quick-play-btn tv-focusable" title="Play Now">
           <i class="fa-solid fa-play ml-0.5"></i>
         </button>
-        <button class="w-8 h-8 rounded-full border border-neutral-600 bg-neutral-900/80 hover:bg-neutral-800 text-white flex items-center justify-center text-xs transition" 
-                onclick="event.stopPropagation(); toggleWatchlist(${JSON.stringify(item).replace(/"/g, '&quot;')}, this)">
+        <button class="quick-wl-btn w-8 h-8 rounded-full border border-neutral-600 bg-neutral-900/80 hover:bg-neutral-800 text-white flex items-center justify-center text-xs transition" title="Watchlist">
           <i class="${isInWatchlist(item.id) ? 'fa-solid fa-check text-red-500' : 'fa-solid fa-plus'}"></i>
         </button>
       </div>
@@ -864,6 +873,21 @@ function createMediaCard(item, isGrid = false) {
       </div>
     </div>
   `;
+
+  const playBtn = el.querySelector('.quick-play-btn');
+  if (playBtn) {
+    playBtn.onclick = (e) => {
+      e.stopPropagation();
+      playMedia(item, 1, 1);
+    };
+  }
+  const wlBtn = el.querySelector('.quick-wl-btn');
+  if (wlBtn) {
+    wlBtn.onclick = (e) => {
+      e.stopPropagation();
+      toggleWatchlist(item, wlBtn);
+    };
+  }
 
   return el;
 }
@@ -1124,11 +1148,16 @@ function playMedia(item, season = 1, episode = 1) {
   const engineSel = document.getElementById('playerEngineSelect');
   if (engineSel) engineSel.value = playerEngine;
 
-  // Update hash route so user can share or bookmark
-  if (type === 'tv') {
-    window.location.hash = `play?id=${id}&type=tv&season=${season}&episode=${episode}`;
-  } else {
-    window.location.hash = `play?id=${id}&type=movie`;
+  // Update hash route safely without triggering hashchange loop crash
+  const newHash = type === 'tv'
+    ? `#play?id=${id}&type=tv&season=${season}&episode=${episode}`
+    : `#play?id=${id}&type=movie`;
+  if (window.location.hash !== newHash) {
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', newHash);
+    } else {
+      window.location.hash = newHash;
+    }
   }
 
   // Launch playback via chosen engine
@@ -1441,17 +1470,6 @@ async function loadCustomPlayer(id, type, season, episode, savedTime = 0) {
       }
     } catch (_) { }
 
-    let playbackWatchdog = setTimeout(() => {
-      if (artPlayerInstance && !artPlayerInstance.playing && artPlayerInstance.currentTime === 0) {
-        console.warn('[Player Watchdog] Switching seamlessly to VidBolt engine!');
-        loadEmbedPlayer();
-      }
-    }, 2500);
-
-    artPlayerInstance.on('play', () => {
-      clearTimeout(playbackWatchdog);
-    });
-
     showToast(`Playing on ${currentStreamServer.toUpperCase()} Server (Ad-Free)`);
   } catch (err) {
     console.warn('Custom player fallback to embed:', err);
@@ -1477,7 +1495,7 @@ function loadEmbedPlayer() {
     iframe.style.zIndex = '20';
   }
   const engineSel = document.getElementById('playerEngineSelect');
-  if (engineSel) engineSel.value = 'embed';
+  if (engineSel && playerEngine === 'custom') engineSel.value = 'vidbolt';
   updateIframeSource();
 }
 
@@ -1490,10 +1508,26 @@ function updateIframeSource() {
   let audioParam = audio && audio !== 'default' ? `&audio=${encodeURIComponent(audio)}` : '';
   let streamUrl = '';
 
-  if (type === 'tv') {
-    streamUrl = `https://vidbolt.pro/tv/${id}/${season}/${episode}?theme=E50914&autoPlay=true&mobileSheets=true${audioParam}`;
+  const engine = playerEngine || 'custom';
+  if (engine === 'vidsrc') {
+    streamUrl = type === 'tv'
+      ? `https://vidsrc.cc/v2/embed/tv/${id}/${season}/${episode}`
+      : `https://vidsrc.cc/v2/embed/movie/${id}`;
+  } else if (engine === 'autoembed') {
+    streamUrl = type === 'tv'
+      ? `https://player.autoembed.cc/embed/tv/${id}/${season}/${episode}`
+      : `https://player.autoembed.cc/embed/movie/${id}`;
+  } else if (engine === 'vidlink') {
+    streamUrl = type === 'tv'
+      ? `https://vidlink.pro/tv/${id}/${season}/${episode}?primaryColor=e50914`
+      : `https://vidlink.pro/movie/${id}?primaryColor=e50914`;
   } else {
-    streamUrl = `https://vidbolt.pro/movie/${id}?theme=E50914&autoPlay=true&mobileSheets=true${audioParam}`;
+    // VidBolt server
+    if (type === 'tv') {
+      streamUrl = `https://vidbolt.pro/tv/${id}/${season}/${episode}?theme=E50914&autoPlay=true&mobileSheets=true${audioParam}`;
+    } else {
+      streamUrl = `https://vidbolt.pro/movie/${id}?theme=E50914&autoPlay=true&mobileSheets=true${audioParam}`;
+    }
   }
 
   iframe.src = streamUrl;
@@ -1838,7 +1872,11 @@ function closePlayerModal() {
   document.getElementById('videoIframe').src = '';
   document.body.classList.remove('overflow-hidden');
   currentPlaying = null;
-  window.location.hash = '';
+  if (window.history && window.history.replaceState) {
+    window.history.replaceState(null, '', window.location.pathname);
+  } else {
+    window.location.hash = '';
+  }
 }
 
 function togglePlayerFullscreen() {
@@ -1864,9 +1902,12 @@ function onModalPlayClicked(e) {
   }
 }
 
-async function openDetailsModal(item) {
+function openDetailsModal(item) {
   const mobWrap = document.getElementById('mobileSearchWrap');
-  if (mobWrap) mobWrap.classList.add('hidden');
+  if (mobWrap) {
+    mobWrap.classList.add('hidden');
+    mobWrap.style.display = 'none';
+  }
   const mobInput = document.getElementById('mobileSearchInput');
   if (mobInput) mobInput.blur();
 
@@ -1874,15 +1915,6 @@ async function openDetailsModal(item) {
   const type = item.media_type || (item.first_air_date ? 'tv' : 'movie');
   const id = item.id;
   const modal = document.getElementById('detailsModal');
-
-  // Fetch full details
-  try {
-    const res = await fetch(`/api/tmdb/${type}/${id}`);
-    if (res.ok) {
-      item = await res.json();
-      item.media_type = type;
-    }
-  } catch (e) { }
 
   const title = item.title || item.name || 'Untitled';
   const year = (item.release_date || item.first_air_date || '').substring(0, 4);
@@ -1902,20 +1934,23 @@ async function openDetailsModal(item) {
   const triggerPlay = (e) => {
     if (e) { e.preventDefault(); e.stopPropagation(); }
     closeDetailsModal();
-    playMedia(item, 1, 1);
+    playMedia(currentModalItem || item, 1, 1);
   };
   playBtn.onclick = triggerPlay;
   playBtn.ontouchend = triggerPlay;
 
-  // TV / Anime: Load Seasons & Episodes
+  // TV / Anime: Check if seasons exist
   const episodesWrap = document.getElementById('modalEpisodesWrap');
   if (type === 'tv' && item.seasons && item.seasons.length > 0) {
     episodesWrap.classList.remove('hidden');
+    episodesWrap.style.display = 'block';
     renderSeasonDropdown(item);
   } else {
     episodesWrap.classList.add('hidden');
+    episodesWrap.style.display = 'none';
   }
 
+  // Open modal instantly in 0ms!
   modal.classList.remove('hidden');
   modal.style.display = 'flex';
   modal.style.zIndex = '9990';
@@ -1925,7 +1960,24 @@ async function openDetailsModal(item) {
       const pBtn = document.getElementById('modalPrimaryPlayBtn');
       if (pBtn) pBtn.focus();
     } catch (_) { }
-  }, 60);
+  }, 50);
+
+  // Background fetch full details if not fully loaded yet
+  fetch(`/api/tmdb/${type}/${id}`)
+    .then(res => res.ok ? res.json() : null)
+    .then(full => {
+      if (!full || currentModalItem?.id !== id) return;
+      full.media_type = type;
+      currentModalItem = full;
+      if (full.overview) document.getElementById('modalOverview').textContent = full.overview;
+      if (full.genres) document.getElementById('modalGenres').textContent = full.genres.map(g => g.name).join(', ');
+      if (type === 'tv' && full.seasons && full.seasons.length > 0) {
+        episodesWrap.classList.remove('hidden');
+        episodesWrap.style.display = 'block';
+        renderSeasonDropdown(full);
+      }
+    })
+    .catch(() => {});
 }
 
 function closeDetailsModal() {
@@ -2271,14 +2323,6 @@ function showToast(message) {
   window.addEventListener('touchmove', onGestureMove, { passive: true });
   window.addEventListener('touchend', onGestureEnd, { passive: true });
   window.addEventListener('touchcancel', onGestureEnd, { passive: true });
-
-  window.addEventListener('pointerdown', onGestureStart, { passive: true });
-  window.addEventListener('pointermove', onGestureMove, { passive: true });
-  window.addEventListener('pointerup', onGestureEnd, { passive: true });
-
-  window.addEventListener('mousedown', onGestureStart, { passive: true });
-  window.addEventListener('mousemove', onGestureMove, { passive: true });
-  window.addEventListener('mouseup', onGestureEnd, { passive: true });
 })();
 
 // ==========================================
