@@ -2137,12 +2137,7 @@ function showToast(message) {
     if (detailsModal && !detailsModal.classList.contains('hidden')) return;
 
     if (deltaX > 35 && deltaX > Math.abs(deltaY) * 1.2) {
-      hasSwiped = true;
-      touchStartX = null;
-      touchStartY = null;
-      if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SWIPE_RIGHT_TO_PLAYMAX' }));
-      }
+      // Handled continuously by native GestureDetector in TadkaView/PlayMax pager
     }
   }
 
@@ -2164,10 +2159,7 @@ function showToast(message) {
     if (detailsModal && !detailsModal.classList.contains('hidden')) return;
 
     if (deltaX > 30 && deltaX > Math.abs(deltaY) * 1.2) {
-      hasSwiped = true;
-      if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SWIPE_RIGHT_TO_PLAYMAX' }));
-      }
+      // Handled continuously by native GestureDetector in TadkaView/PlayMax pager
     }
   }
 
